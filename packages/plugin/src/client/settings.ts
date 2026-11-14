@@ -92,6 +92,8 @@ export function createRemotePluginOptions(React: ClientReact) {
     const [signInOpen, setSignInOpen] = React.useState(false)
     const [loginEmail, setLoginEmail] = React.useState('')
     const [loginPassword, setLoginPassword] = React.useState('')
+    const [mfaTicket, setMfaTicket] = React.useState<string | undefined>(undefined)
+    const [totpCode, setTotpCode] = React.useState('')
     const [loginMethod, setLoginMethod] = React.useState<SettingsLoginMethod>('password')
     const [oauthProviders, setOAuthProviders] = React.useState<OAuthProviderInfo[]>([])
     const [providersLoading, setProvidersLoading] = React.useState(false)
@@ -347,17 +349,34 @@ export function createRemotePluginOptions(React: ClientReact) {
     }
 
     const signInClient = async (): Promise<void> => {
-      if (savingServer || serverDirty || loginEmail.trim() === '' || loginPassword === '') return
+      if (savingServer || serverDirty) return
+      if (mfaTicket === undefined && (loginEmail.trim() === '' || loginPassword === '')) return
+      if (mfaTicket !== undefined && totpCode.trim() === '') return
       setBusy(true)
       setError(undefined)
       try {
-        const result = await props.control<PluginConfigureResult>('settings.configure', {
+        const payload: Record<string, any> = {
           role: 'client',
           serverUrl: serverUrl.trim() || 'https://desktop.svc.plus',
-          email: loginEmail.trim(),
-          password: loginPassword,
-        })
-        applyView(result.settings)
+        }
+        if (mfaTicket !== undefined) {
+          payload.mfaTicket = mfaTicket
+          payload.totpCode = totpCode.trim()
+        } else {
+          payload.email = loginEmail.trim()
+          payload.password = loginPassword
+        }
+        const result = await props.control<any>('settings.configure', payload)
+        if (result?.mfaRequired && result?.mfaTicket) {
+          setMfaTicket(result.mfaTicket)
+          setBusy(false)
+          return
+        }
+        setMfaTicket(undefined)
+        setTotpCode('')
+        if (result?.settings) {
+          applyView(result.settings)
+        }
         setSignInOpen(false)
         setLoginPassword('')
         setNotice({ key: 'authorizationComplete' })
@@ -752,23 +771,43 @@ export function createRemotePluginOptions(React: ClientReact) {
         ? React.createElement('div', { role: 'tabpanel', id: 'dsh-remote-settings-device-pairing-panel', 'aria-labelledby': 'dsh-remote-settings-device-pairing-tab' },
           React.createElement(HostPairingPanel, { key: settingsView?.config.serverUrl ?? '', control: props.control, serverUrl: settingsView?.config.serverUrl ?? '', disabled: busy || !writable || serverDirty, t, onComplete: () => void props.control<PluginSettingsView>('settings.get').then(view => { applyView(view); setSignInOpen(false); props.onSignIn?.() }).catch(() => undefined) }))
         : passwordVisible
-        ? React.createElement('div', {
-          className: 'dshRemoteClientLogin', role: 'tabpanel', id: 'dsh-remote-settings-password-panel',
-          'aria-labelledby': 'dsh-remote-settings-password-tab',
-        },
-          React.createElement('input', {
-            type: 'email', value: loginEmail, disabled: busy, autoComplete: 'username', placeholder: t('account'),
-            'aria-label': t('account'), onChange: (event: Event) => setLoginEmail((event.target as HTMLInputElement).value),
-          }),
-          React.createElement('input', {
-            type: 'password', value: loginPassword, disabled: busy, autoComplete: 'current-password', placeholder: t('password'),
-            'aria-label': t('password'), onChange: (event: Event) => setLoginPassword((event.target as HTMLInputElement).value),
-          }),
-          React.createElement('button', {
-            type: 'button', disabled: busy || loginEmail.trim() === '' || loginPassword === '',
-            onClick: () => void signInClient(),
-          }, t(busy ? 'signingIn' : 'startSignIn')),
-          React.createElement('p', { className: 'dshRemotePasswordHint' }, t('passwordHint')))
+        ? mfaTicket !== undefined
+          ? React.createElement('div', {
+            className: 'dshRemoteClientLogin', role: 'tabpanel', id: 'dsh-remote-settings-password-panel',
+            'aria-labelledby': 'dsh-remote-settings-password-tab',
+          },
+            React.createElement('p', { className: 'dshRemotePasswordHint', style: { fontWeight: 600, color: '#3b82f6', marginBottom: 8 } }, t('mfaVerificationRequired')),
+            React.createElement('input', {
+              type: 'text', value: totpCode, disabled: busy, placeholder: t('mfaCodePlaceholder'),
+              'aria-label': t('mfaCodePlaceholder'), maxLength: 8, autoFocus: true,
+              onChange: (event: Event) => setTotpCode((event.target as HTMLInputElement).value.trim()),
+            }),
+            React.createElement('button', {
+              type: 'button', disabled: busy || totpCode.trim().length < 6,
+              onClick: () => void signInClient(),
+            }, t(busy ? 'signingIn' : 'verifyAndSignIn')),
+            React.createElement('button', {
+              type: 'button', style: { marginTop: 4, background: 'transparent', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '0.85rem' },
+              disabled: busy,
+              onClick: () => { setMfaTicket(undefined); setTotpCode(''); },
+            }, t('backToPassword')))
+          : React.createElement('div', {
+            className: 'dshRemoteClientLogin', role: 'tabpanel', id: 'dsh-remote-settings-password-panel',
+            'aria-labelledby': 'dsh-remote-settings-password-tab',
+          },
+            React.createElement('input', {
+              type: 'email', value: loginEmail, disabled: busy, autoComplete: 'username', placeholder: t('account'),
+              'aria-label': t('account'), onChange: (event: Event) => setLoginEmail((event.target as HTMLInputElement).value),
+            }),
+            React.createElement('input', {
+              type: 'password', value: loginPassword, disabled: busy, autoComplete: 'current-password', placeholder: t('password'),
+              'aria-label': t('password'), onChange: (event: Event) => setLoginPassword((event.target as HTMLInputElement).value),
+            }),
+            React.createElement('button', {
+              type: 'button', disabled: busy || loginEmail.trim() === '' || loginPassword === '',
+              onClick: () => void signInClient(),
+            }, t(busy ? 'signingIn' : 'startSignIn')),
+            React.createElement('p', { className: 'dshRemotePasswordHint' }, t('passwordHint')))
         : !savingServer && !serverDirty && selectedProvider !== undefined
           ? React.createElement('div', {
             className: 'dshRemoteQrLogin', role: 'tabpanel', id: `dsh-remote-settings-${loginMethod}-panel`,

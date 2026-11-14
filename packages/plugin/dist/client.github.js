@@ -3074,7 +3074,7 @@ If a code was sent, recover the original submission without changing it.`,
         subscribeStatus,
         getStatusSnapshot,
         getStatusSnapshot
-      ), [open, setOpen] = React.useState(props.view === "page"), [serverUrl, setServerUrl] = React.useState(""), [savingServer, setSavingServer] = React.useState(!1), [editingServer, setEditingServer] = React.useState(!1), serverDraftEdited = React.useRef(!1), [remoteToolsBusy, setRemoteToolsBusy] = React.useState(!1), [remoteToolsEnabled, setRemoteToolsEnabled] = React.useState(!0), [associations, setAssociations] = React.useState({}), [loaded, setLoaded] = React.useState(!1), [writable, setWritable] = React.useState(!1), [busy, setBusy] = React.useState(!1), [terminalEnabled, setTerminalEnabled] = React.useState(!1), [debugBusy, setDebugBusy] = React.useState(!1), [debugLogging, setDebugLogging] = React.useState(!1), [resetBusy, setResetBusy] = React.useState(!1), [retryStartupBusy, setRetryStartupBusy] = React.useState(!1), [terminalBusy, setTerminalBusy] = React.useState(!1), [sidebarEntry, setSidebarEntry] = React.useState(() => props.sidebarEntry?.read?.() ?? "standard"), [sidebarEntryBusy, setSidebarEntryBusy] = React.useState(!1), [acpBackends, setAcpBackends] = React.useState([]), [acpAvailability, setAcpAvailability] = React.useState({}), [acpChecking, setAcpChecking] = React.useState({}), [acpInstalling, setAcpInstalling] = React.useState({}), [acpCheckResults, setAcpCheckResults] = React.useState({}), [reconnectBusy, setReconnectBusy] = React.useState(!1), [hostStatus, setHostStatus] = React.useState(void 0), [hostName, setHostName] = React.useState(""), [hostDeviceId, setHostDeviceId] = React.useState(""), [notice, setNotice] = React.useState(void 0), [error, setError] = React.useState(void 0), [settingsView, setSettingsView] = React.useState(void 0), [signInOpen, setSignInOpen] = React.useState(!1), [loginEmail, setLoginEmail] = React.useState(""), [loginPassword, setLoginPassword] = React.useState(""), [loginMethod, setLoginMethod] = React.useState("password"), [oauthProviders, setOAuthProviders] = React.useState([]), [providersLoading, setProvidersLoading] = React.useState(!1), [providersFailed, setProvidersFailed] = React.useState(!1), [pairingServerUrl, setPairingServerUrl] = React.useState(void 0), [qrSession, setQrSession] = React.useState(void 0), [qrImage, setQrImage] = React.useState(void 0), [qrExpired, setQrExpired] = React.useState(!1), [qrFailed, setQrFailed] = React.useState(!1), [qrBusy, setQrBusy] = React.useState(!1), [qrCompleted, setQrCompleted] = React.useState(!1), [providerReload, setProviderReload] = React.useState(0), [completionReload, setCompletionReload] = React.useState(0), qrFlowRun = React.useRef(0), providerRequestRun = React.useRef(0), loginMethodManuallySelected = React.useRef(!1), associationReadRun = React.useRef(0), association = associations.client ?? associations.host;
+      ), [open, setOpen] = React.useState(props.view === "page"), [serverUrl, setServerUrl] = React.useState(""), [savingServer, setSavingServer] = React.useState(!1), [editingServer, setEditingServer] = React.useState(!1), serverDraftEdited = React.useRef(!1), [remoteToolsBusy, setRemoteToolsBusy] = React.useState(!1), [remoteToolsEnabled, setRemoteToolsEnabled] = React.useState(!0), [associations, setAssociations] = React.useState({}), [loaded, setLoaded] = React.useState(!1), [writable, setWritable] = React.useState(!1), [busy, setBusy] = React.useState(!1), [terminalEnabled, setTerminalEnabled] = React.useState(!1), [debugBusy, setDebugBusy] = React.useState(!1), [debugLogging, setDebugLogging] = React.useState(!1), [resetBusy, setResetBusy] = React.useState(!1), [retryStartupBusy, setRetryStartupBusy] = React.useState(!1), [terminalBusy, setTerminalBusy] = React.useState(!1), [sidebarEntry, setSidebarEntry] = React.useState(() => props.sidebarEntry?.read?.() ?? "standard"), [sidebarEntryBusy, setSidebarEntryBusy] = React.useState(!1), [acpBackends, setAcpBackends] = React.useState([]), [acpAvailability, setAcpAvailability] = React.useState({}), [acpChecking, setAcpChecking] = React.useState({}), [acpInstalling, setAcpInstalling] = React.useState({}), [acpCheckResults, setAcpCheckResults] = React.useState({}), [reconnectBusy, setReconnectBusy] = React.useState(!1), [hostStatus, setHostStatus] = React.useState(void 0), [hostName, setHostName] = React.useState(""), [hostDeviceId, setHostDeviceId] = React.useState(""), [notice, setNotice] = React.useState(void 0), [error, setError] = React.useState(void 0), [settingsView, setSettingsView] = React.useState(void 0), [signInOpen, setSignInOpen] = React.useState(!1), [loginEmail, setLoginEmail] = React.useState(""), [loginPassword, setLoginPassword] = React.useState(""), [mfaTicket, setMfaTicket] = React.useState(void 0), [totpCode, setTotpCode] = React.useState(""), [loginMethod, setLoginMethod] = React.useState("password"), [oauthProviders, setOAuthProviders] = React.useState([]), [providersLoading, setProvidersLoading] = React.useState(!1), [providersFailed, setProvidersFailed] = React.useState(!1), [pairingServerUrl, setPairingServerUrl] = React.useState(void 0), [qrSession, setQrSession] = React.useState(void 0), [qrImage, setQrImage] = React.useState(void 0), [qrExpired, setQrExpired] = React.useState(!1), [qrFailed, setQrFailed] = React.useState(!1), [qrBusy, setQrBusy] = React.useState(!1), [qrCompleted, setQrCompleted] = React.useState(!1), [providerReload, setProviderReload] = React.useState(0), [completionReload, setCompletionReload] = React.useState(0), qrFlowRun = React.useRef(0), providerRequestRun = React.useRef(0), loginMethodManuallySelected = React.useRef(!1), associationReadRun = React.useRef(0), association = associations.client ?? associations.host;
       React.useEffect(() => {
         association !== void 0 && setSignInOpen(!1);
       }, [association]);
@@ -3195,16 +3195,20 @@ If a code was sent, recover the original submission without changing it.`,
           }
         }
       }, signInClient = async () => {
-        if (!(savingServer || serverDirty || loginEmail.trim() === "" || loginPassword === "")) {
+        if (!(savingServer || serverDirty) && !(mfaTicket === void 0 && (loginEmail.trim() === "" || loginPassword === "")) && !(mfaTicket !== void 0 && totpCode.trim() === "")) {
           setBusy(!0), setError(void 0);
           try {
-            let result = await props.control("settings.configure", {
+            let payload = {
               role: "client",
-              serverUrl: serverUrl.trim() || "https://desktop.svc.plus",
-              email: loginEmail.trim(),
-              password: loginPassword
-            });
-            applyView(result.settings), setSignInOpen(!1), setLoginPassword(""), setNotice({ key: "authorizationComplete" });
+              serverUrl: serverUrl.trim() || "https://desktop.svc.plus"
+            };
+            mfaTicket !== void 0 ? (payload.mfaTicket = mfaTicket, payload.totpCode = totpCode.trim()) : (payload.email = loginEmail.trim(), payload.password = loginPassword);
+            let result = await props.control("settings.configure", payload);
+            if (result?.mfaRequired && result?.mfaTicket) {
+              setMfaTicket(result.mfaTicket), setBusy(!1);
+              return;
+            }
+            setMfaTicket(void 0), setTotpCode(""), result?.settings && applyView(result.settings), setSignInOpen(!1), setLoginPassword(""), setNotice({ key: "authorizationComplete" });
           } catch (reason) {
             setError(messageOf(reason, t));
           } finally {
@@ -3588,7 +3592,39 @@ If a code was sent, recover the original submission without changing it.`,
               applyView(view), setSignInOpen(!1), props.onSignIn?.();
             }).catch(() => {
             }) })
-          ) : passwordVisible ? React.createElement(
+          ) : passwordVisible ? mfaTicket !== void 0 ? React.createElement(
+            "div",
+            {
+              className: "dshRemoteClientLogin",
+              role: "tabpanel",
+              id: "dsh-remote-settings-password-panel",
+              "aria-labelledby": "dsh-remote-settings-password-tab"
+            },
+            React.createElement("p", { className: "dshRemotePasswordHint", style: { fontWeight: 600, color: "#3b82f6", marginBottom: 8 } }, t("mfaVerificationRequired")),
+            React.createElement("input", {
+              type: "text",
+              value: totpCode,
+              disabled: busy,
+              placeholder: t("mfaCodePlaceholder"),
+              "aria-label": t("mfaCodePlaceholder"),
+              maxLength: 8,
+              autoFocus: !0,
+              onChange: (event) => setTotpCode(event.target.value.trim())
+            }),
+            React.createElement("button", {
+              type: "button",
+              disabled: busy || totpCode.trim().length < 6,
+              onClick: () => void signInClient()
+            }, t(busy ? "signingIn" : "verifyAndSignIn")),
+            React.createElement("button", {
+              type: "button",
+              style: { marginTop: 4, background: "transparent", border: "none", color: "#6b7280", cursor: "pointer", fontSize: "0.85rem" },
+              disabled: busy,
+              onClick: () => {
+                setMfaTicket(void 0), setTotpCode("");
+              }
+            }, t("backToPassword"))
+          ) : React.createElement(
             "div",
             {
               className: "dshRemoteClientLogin",

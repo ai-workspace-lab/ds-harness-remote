@@ -85558,19 +85558,43 @@ var HostServerApi = class {
   async authorizeWithAccount(identity3, email3, password, recoverIdentity, mfa) {
     this.bindIdentity(identity3);
     let payload;
+    let loginPaths;
     if (mfa !== void 0 && mfa.ticket.length > 0 && mfa.code.length > 0) {
-      payload = { mfa_ticket: mfa.ticket, code: mfa.code };
+      payload = {
+        mfa_ticket: mfa.ticket,
+        code: mfa.code
+      };
+      loginPaths = ["/api/v1/auth/mfa/verify", "/api/auth/mfa/verify", "/api/v1/auth/login", "/api/auth/login"];
     } else {
       const account = email3.trim();
       if (account.length === 0 || password.length === 0) {
         throw new ServerApiError("INVALID_MESSAGE", "Email and password are required.", false);
       }
       payload = { email: account, password };
+      loginPaths = ["/api/v1/auth/login", "/api/auth/login"];
     }
-    const login2 = validateWebLogin(await this.publicRequest("/api/v1/auth/login", {
-      method: "POST",
-      body: JSON.stringify(payload)
-    }));
+    let lastError;
+    let rawResult;
+    for (const path of loginPaths) {
+      try {
+        rawResult = await this.publicRequest(path, {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+        lastError = void 0;
+        break;
+      } catch (err5) {
+        lastError = err5;
+        if (err5 instanceof ServerApiError && err5.status === 404) {
+          continue;
+        }
+        throw err5;
+      }
+    }
+    if (lastError !== void 0) {
+      throw lastError;
+    }
+    const login2 = validateWebLogin(rawResult);
     if ("mfaRequired" in login2) {
       return login2;
     }
@@ -86019,7 +86043,7 @@ function validateTokens(value) {
 function validateWebLogin(value) {
   const item = requireRecord(value, "account login");
   if (item.mfa_required === true || item.mfaRequired === true) {
-    const ticket = typeof item.mfa_ticket === "string" ? item.mfa_ticket : typeof item.mfaTicket === "string" ? item.mfaTicket : "";
+    const ticket = typeof item.mfa_ticket === "string" ? item.mfa_ticket : typeof item.mfaTicket === "string" ? item.mfaTicket : typeof item.mfaToken === "string" ? item.mfaToken : "";
     const method = typeof item.mfa_method === "string" ? item.mfa_method : typeof item.mfaMethod === "string" ? item.mfaMethod : "totp";
     if (ticket.length > 0) {
       return {
@@ -86029,15 +86053,30 @@ function validateWebLogin(value) {
       };
     }
   }
-  if (typeof item.token !== "string" || item.token.length < 16 || !Number.isSafeInteger(item.expiresAt) || typeof item.account !== "string" || item.account.length === 0 || item.account.length > 254 || typeof item.isAdmin !== "boolean") {
-    throw new ServerApiError("INVALID_MESSAGE", "The Server returned an invalid account session.", false);
+  const token = typeof item.token === "string" && item.token.length >= 16 ? item.token : typeof item.access_token === "string" && item.access_token.length >= 16 ? item.access_token : void 0;
+  if (token === void 0) {
+    throw new ServerApiError("INVALID_MESSAGE", "The Server returned an invalid account session token.", false);
   }
+  let expiresAt;
+  if (Number.isSafeInteger(item.expiresAt)) {
+    expiresAt = item.expiresAt;
+  } else if (typeof item.expiresAt === "string") {
+    const parsed = Date.parse(item.expiresAt);
+    expiresAt = Number.isSafeInteger(parsed) ? parsed : Date.now() + 864e5;
+  } else if (typeof item.expires_in === "number" && item.expires_in > 0) {
+    expiresAt = Date.now() + item.expires_in * 1e3;
+  } else {
+    expiresAt = Date.now() + 864e5;
+  }
+  const user = typeof item.user === "object" && item.user !== null ? item.user : void 0;
+  const account = typeof item.account === "string" && item.account.length > 0 ? item.account : typeof user?.email === "string" && user.email.length > 0 ? user.email : typeof user?.username === "string" && user.username.length > 0 ? user.username : typeof user?.name === "string" && user.name.length > 0 ? user.name : typeof user?.id === "string" && user.id.length > 0 ? user.id : "user";
+  const isAdmin = typeof item.isAdmin === "boolean" ? item.isAdmin : typeof user?.role === "string" && user.role.toLowerCase() === "admin" ? true : Array.isArray(user?.roles) && user.roles.includes("admin");
   return {
-    token: item.token,
-    expiresAt: item.expiresAt,
-    account: item.account,
-    profile: item.profile,
-    isAdmin: item.isAdmin
+    token,
+    expiresAt,
+    account,
+    profile: item.user ?? item.profile,
+    isAdmin
   };
 }
 function isErrorEnvelope(value) {
@@ -86072,7 +86111,7 @@ function responseErrorCode(status2, serverCode) {
   if (typeof serverCode === "string" && !AUTHORIZATION_ERROR_CODES.has(serverCode)) return serverCode;
   if (status2 === 404 && typeof serverCode === "string") return serverCode;
   if (status2 === 404) return "DEVICE_NOT_FOUND";
-  return typeof serverCode === "string" ? serverCode : "INVALID_MESSAGE";
+  return "INVALID_MESSAGE";
 }
 var AUTHORIZATION_ERROR_CODES = /* @__PURE__ */ new Set([
   "ACCOUNT_AUTH_REQUIRED",
