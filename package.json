@@ -1,31 +1,42 @@
 {
   "name": "ds-harness-remote",
   "version": "0.6.5",
-  "description": "P2P-based, end-to-end encrypted remote access to DeepSeek Harness, CodeX, Claude Code, Pi, and other workspaces from web and mobile clients.",
+  "description": "XWorkmate Remote: P2P-based, end-to-end encrypted remote access to DeepSeek Harness, AI Desktop and Workspaces from XWorkmate App, web and mobile clients.",
   "keywords": [
     "deepseek",
     "deepseek-harness",
     "dsh",
     "dsh-plugin",
+    "xworkmate",
+    "xworkmate-remote",
+    "xworkmate-app",
+    "xworkmate-pairing-v1",
     "codex",
     "remote-development",
     "end-to-end-encryption",
     "webrtc"
   ],
-  "homepage": "https://github.com/liguobao/ds-harness-remote#readme",
+  "homepage": "https://github.com/ai-workspace-lab/ds-harness-remote#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/liguobao/ds-harness-remote.git"
+    "url": "git+https://github.com/ai-workspace-lab/ds-harness-remote.git"
   },
   "bugs": {
-    "url": "https://github.com/liguobao/ds-harness-remote/issues"
+    "url": "https://github.com/ai-workspace-lab/ds-harness-remote/issues"
   },
   "author": "liguobao <lgb835485368@gmail.com>",
   "license": "MIT",
   "type": "module",
   "main": "./index.js",
   "bin": {
-    "ds-harness-remote": "./packages/plugin/bin/ds-harness-remote.js"
+    "ds-harness-remote": "./packages/plugin/bin/ds-harness-remote.js",
+    "xworkmate-remote": "./packages/plugin/bin/ds-harness-remote.js"
+  },
+  "xworkmate": {
+    "component": "remote-desktop-server",
+    "pairingProtocol": "xworkmate-pairing-v1",
+    "clientApp": "https://github.com/ai-workspace-lab/xworkmate-app",
+    "transport": "webrtc-xconnect"
   },
   "types": "./packages/plugin/public.d.ts",
   "exports": {

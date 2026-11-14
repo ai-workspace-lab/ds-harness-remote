@@ -913,8 +913,8 @@ describe('HarnessRemoteBridge', () => {
   })
 
   it('confines native workspace file reads and rejects path traversal (issue #250)', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'dsh-native-ws-'))
-    const outside = await mkdtemp(join(tmpdir(), 'dsh-native-outside-'))
+    const root = await realpath(await mkdtemp(join(tmpdir(), 'dsh-native-ws-')))
+    const outside = await realpath(await mkdtemp(join(tmpdir(), 'dsh-native-outside-')))
     try {
       const insideFile = join(root, 'inside.txt')
       const doubleDotFile = join(root, '..notes.txt')

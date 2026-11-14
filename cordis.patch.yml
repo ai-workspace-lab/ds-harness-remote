@@ -12,7 +12,12 @@
       config:
         enabled: true
         role: host
-        serverUrl: https://dsh.r2049.cn
+        serverUrl: https://gateway.svc.plus
+        pairingProtocol: xworkmate-pairing-v1
+        xworkmate:
+          enabled: true
+          pairingProtocol: xworkmate-pairing-v1
+          transport: xconnect
         codex:
           enabled: true
           binary: codex

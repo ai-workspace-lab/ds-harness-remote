@@ -53,10 +53,10 @@ The DeepSeek Harness desktop edition is supported. Install the latest release:
 | Client | Form | Status | Notes |
 | --- | --- | --- | --- |
 | DSH&nbsp;Desktop&nbsp;plugin | Remote sidebar | Supported | Install `ds-harness-remote@0.6.5`; this computer can also be the Host |
-| Web | Browser page | Supported | Open [https://dsh.r2049.cn](https://dsh.r2049.cn); reuses the native Harness interface |
-| Android | Native app | Supported | Download the APK from [Releases](https://github.com/liguobao/ds-harness-remote/releases/latest); see the [Android guide](apps/android/README.md) |
-| DSH Go | A standout app by ccch1mneyyy | Supported | See [ccch1mneyyy/dsh-go: an Android client for DeepSeek Harness. Run it directly on your phone or control DSH on your computer remotely.](https://github.com/ccch1mneyyy/dsh-go) |
-| iOS | TestFlight beta | Beta | Not publicly released; see [issue #20](https://github.com/liguobao/ds-harness-remote/issues/20) |
+| Web | Browser page | Supported | Open [https://gateway.svc.plus](https://gateway.svc.plus); reuses the native Harness interface |
+| Android | Native app | Supported | Download the APK from [Releases](https://github.com/ai-workspace-lab/ds-harness-remote/releases/latest); see the [Android guide](apps/android/README.md) |
+| XWorkmate App | Cross-platform client | Supported | See [ai-workspace-lab/xworkmate-app: Native cross-platform client with TaskBoard, WebRTC streaming & pairing](https://github.com/ai-workspace-lab/xworkmate-app) |
+| iOS | TestFlight beta | Beta | Not publicly released; see [issue #20](https://github.com/ai-workspace-lab/ds-harness-remote/issues/20) |
 | Browser&nbsp;extension | Chrome | Entry point only | Exchanges an already signed-in Web authorization for a separate device credential, lists online Hosts and opens the same-origin Remote Web; it does not host a conversation UI |
 | dsh-TUI | Terminal-only CLI | Planned | Integration is not part of this release and returns in a later version; the installer never creates a Web service for it automatically |
 | Linux | Cloud server | Supported | Sign in on the [official website](https://dsh.r2049.cn/) to install with one command. |
@@ -329,10 +329,21 @@ On Android, reproduce the problem, then open **Settings → Diagnostics → Expo
 
 On the Host, enable **Debug logging** in **Plugins → Remote settings**. The setting is saved and takes effect immediately; turn it off after troubleshooting (restores `info`). Look for `[ds-harness-remote]` in the Host log, or `desktop.log` on Desktop. Manual configuration also accepts `logLevel: debug`.
 
+## Fork Base & Upstream Provenance (上游溯源声明)
+
+- **Upstream Base (上游基线)**: [https://github.com/liguobao/ds-harness-remote](https://github.com/liguobao/ds-harness-remote)
+- **Original Author (原作者)**: liguobao <lgb835485368@gmail.com>
+- **Target Repository (目标仓库)**: [ai-workspace-lab/ds-harness-remote](https://github.com/ai-workspace-lab/ds-harness-remote)
+- **Maintainer (维护组织)**: [AI Workspace Lab](https://github.com/ai-workspace-lab) (XWorkmate Ecosystem)
+- **Evolution & Divergence (衍生演进)**:
+  1. **Purge Third-Party OAuth**: 彻底移除第三方 OAuth 依赖（微信二维码、知乎扫码及意图等）；
+  2. **Standardize on XWorkmate**: 规范化融入 `xworkmate-pairing-v1` 原生配对协议与 `xworkmate-app` 跨平台接入端；
+  3. **XConnect Zero-Trust Overlay**: 深度集成 XConnect 零信任隧道网络，实现 AI Desktop 宿主零公网开放端口安全直连。
+
 ## License
 
 [MIT](packages/plugin/LICENSE)
 
-### Pair with DSH-Go
+### Pair with XWorkmate App
 
-Open Sign in → DSH-Go pairing in the local Remote settings and generate a QR code, scan and confirm on a compatible DSH-Go build, then enter the phone code on this computer. A wrong code invalidates the whole pairing. New Hosts accept incoming connections only; Device-only accounts have no Web/Admin access. Requires the full Server pairing v1 API and a DSH-Go build implementing [this integration](docs/dsh-go-pairing-integration.md). The bundled minimal Server does not support this workflow.
+Open Sign in → XWorkmate pairing in the local Remote settings to generate an ephemeral QR code conforming to the `xworkmate-pairing-v1` protocol. Scan and confirm using the [XWorkmate App](https://github.com/ai-workspace-lab/xworkmate-app). The pairing token is generated strictly in-memory without persistent disk storage or secret leaks. Requires the Server pairing v1 API and XWorkmate App.
