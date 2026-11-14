@@ -160,6 +160,10 @@ export function connectionErrorMessage(code: string, t: Translate): string {
   if (code === 'INVALID_MESSAGE') return t('connectionInvalidResponse')
   if (code === 'CONNECTION_FAILED') return t('serverUnavailableError')
   if (code === 'SERVER_NOT_CONFIGURED') return t('connectionReachability')
+  if (code === 'invalid_credentials' || code === 'INVALID_CREDENTIALS') return t('invalidCredentials')
+  if (code === 'invalid_mfa_code' || code === 'INVALID_MFA_CODE') return t('invalidMfaCode')
+  if (code === 'user_not_found' || code === 'USER_NOT_FOUND') return t('userNotFound')
+  if (code === 'mfa_code_required') return t('mfaCodeRequired')
   return t('connectionUnexpected')
 }
 

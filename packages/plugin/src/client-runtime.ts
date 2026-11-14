@@ -379,15 +379,18 @@ export class ClientModeRuntime {
     throw new ClientModeError(status.error, message)
   }
 
-  async authorizeClientWithAccount(email: string, password: string): Promise<unknown> {
+  async authorizeClientWithAccount(email: string, password: string, mfa?: { ticket: string; code: string }): Promise<unknown> {
     let authorization
     try {
-      authorization = await this.server.authorizeWithAccount(this.requireIdentity(), email, password)
+      authorization = await this.server.authorizeWithAccount(this.requireIdentity(), email, password, undefined, mfa)
     } catch (error) {
       if (!(error instanceof ServerApiError) || error.code !== 'DEVICE_REVOKED') throw error
       this.identity = await this.identities.reset(this.config.deviceName)
       this.server.bindIdentity(this.identity)
-      authorization = await this.server.authorizeWithAccount(this.identity, email, password)
+      authorization = await this.server.authorizeWithAccount(this.identity, email, password, undefined, mfa)
+    }
+    if (typeof authorization === 'object' && authorization !== null && 'mfaRequired' in authorization && (authorization as any).mfaRequired) {
+      return authorization
     }
     await this.authorizeHostByDefault()
     this.clientAuthRequired = false

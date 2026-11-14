@@ -19,6 +19,7 @@ import {
   HostServerApi,
   ServerApiError,
   type DeviceAuthorization,
+  type WebLoginMfaChallenge,
   type OAuthProvider,
   type OAuthProviderInfo,
   type OAuthQrPollResult,
@@ -421,7 +422,7 @@ export class HostPluginRuntime {
     return result
   }
 
-  async authorizeHostWithAccount(email: string, password: string): Promise<DeviceAuthorization> {
+  async authorizeHostWithAccount(email: string, password: string): Promise<DeviceAuthorization | WebLoginMfaChallenge> {
     if (this.serverApi === undefined) {
       throw new ServerApiError('SERVER_NOT_CONFIGURED', 'Configure serverUrl before signing in.', false)
     }
@@ -436,6 +437,9 @@ export class HostPluginRuntime {
       this.logger.info('Rotated revoked Host identity before account authorization')
       return this.identity
     })
+    if ('mfaRequired' in result) {
+      return result
+    }
     this.serverConnection?.resume()
     this.logger.info('Host account authorized')
     return result

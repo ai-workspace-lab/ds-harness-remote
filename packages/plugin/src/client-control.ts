@@ -25,7 +25,7 @@ export interface ClientControlContext {
   readonly detailedStatus: () => Promise<Record<string, unknown>>
   readonly devices: () => Promise<RemoteDeviceView[]>
   readonly server: ClientServerApi
-  readonly authorizeClientWithAccount: (email: string, password: string) => Promise<unknown>
+  readonly authorizeClientWithAccount: (email: string, password: string, mfa?: { ticket: string; code: string }) => Promise<unknown>
   readonly startClientOAuthQrLogin: (provider: OAuthProvider) => Promise<unknown>
   readonly pollClientOAuthQrLogin: (qrId: string) => Promise<unknown>
   readonly activeRemote: () => ConnectedRemote | undefined
@@ -66,10 +66,13 @@ export class ClientControl {
       if (endpoint === 'client.account.providers') return ok(await this.context.server.oauthProviders())
       if (endpoint === 'client.account.login') {
         const value = record(payload)
-        if (typeof value.email !== 'string' || typeof value.password !== 'string') {
+        const mfa = typeof value.mfaTicket === 'string' && typeof value.totpCode === 'string'
+          ? { ticket: value.mfaTicket, code: value.totpCode }
+          : undefined
+        if (!mfa && (typeof value.email !== 'string' || typeof value.password !== 'string')) {
           throw new ClientModeError('INVALID_MESSAGE', 'Email and password are required.')
         }
-        return ok(await this.context.authorizeClientWithAccount(value.email, value.password))
+        return ok(await this.context.authorizeClientWithAccount(String(value.email ?? ''), String(value.password ?? ''), mfa))
       }
       if (endpoint === 'client.account.qr.start') {
         const value = record(payload)

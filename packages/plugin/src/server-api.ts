@@ -12,13 +12,21 @@ interface ErrorEnvelope {
   error: { code: string; message: string; retryable: boolean }
 }
 
-interface WebLoginResponse {
+export interface WebLoginSession {
   token: string
   expiresAt: number
   account: string
-  profile: unknown
+  profile?: unknown
   isAdmin: boolean
 }
+
+export interface WebLoginMfaChallenge {
+  mfaRequired: true
+  mfaMethod: string
+  mfaTicket: string
+}
+
+export type WebLoginResponse = WebLoginSession | WebLoginMfaChallenge
 
 export interface OAuthQrSession {
   qrId: string
@@ -160,16 +168,26 @@ export class HostServerApi {
     email: string,
     password: string,
     recoverIdentity?: () => Promise<HostIdentity>,
-  ): Promise<DeviceAuthorization> {
+    mfa?: { ticket: string; code: string },
+  ): Promise<DeviceAuthorization | WebLoginMfaChallenge> {
     this.bindIdentity(identity)
-    const account = email.trim()
-    if (account.length === 0 || password.length === 0) {
-      throw new ServerApiError('INVALID_MESSAGE', 'Email and password are required.', false)
+    let payload: Record<string, string>
+    if (mfa !== undefined && mfa.ticket.length > 0 && mfa.code.length > 0) {
+      payload = { mfa_ticket: mfa.ticket, code: mfa.code }
+    } else {
+      const account = email.trim()
+      if (account.length === 0 || password.length === 0) {
+        throw new ServerApiError('INVALID_MESSAGE', 'Email and password are required.', false)
+      }
+      payload = { email: account, password }
     }
     const login = validateWebLogin(await this.publicRequest<unknown>('/api/v1/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email: account, password }),
+      body: JSON.stringify(payload),
     }))
+    if ('mfaRequired' in login) {
+      return login
+    }
     const authorization = {
       accountToken: login.token,
       account: login.account,
@@ -587,7 +605,30 @@ export class HostServerApi {
       const body = await parseBody(response)
       signal.throwIfAborted()
       if (!response.ok) {
-        const envelope = isErrorEnvelope(body) ? body : undefined
+        let envelope: ErrorEnvelope | undefined = isErrorEnvelope(body) ? body : undefined
+        if (envelope === undefined && typeof body === 'object' && body !== null && !Array.isArray(body)) {
+          const rec = body as Record<string, unknown>
+          if (typeof rec.error_detail === 'object' && rec.error_detail !== null && !Array.isArray(rec.error_detail)) {
+            const detail = rec.error_detail as Record<string, unknown>
+            if (typeof detail.code === 'string' && detail.code.length > 0) {
+              envelope = {
+                error: {
+                  code: detail.code,
+                  message: typeof detail.message === 'string' && detail.message.length > 0 ? detail.message : detail.code,
+                  retryable: typeof detail.retryable === 'boolean' ? detail.retryable : (response.status >= 500 || response.status === 429),
+                },
+              }
+            }
+          } else if (typeof rec.error === 'string' && rec.error.length > 0) {
+            envelope = {
+              error: {
+                code: rec.error,
+                message: typeof rec.message === 'string' && rec.message.length > 0 ? rec.message : rec.error,
+                retryable: response.status >= 500 || response.status === 429,
+              },
+            }
+          }
+        }
         // A gateway can challenge requests during startup. Only a protocol
         // error envelope establishes that the device credentials were rejected.
         if ((response.status === 401 || response.status === 403) && envelope === undefined) {
@@ -666,6 +707,17 @@ function validateTokens(value: unknown): TokenPair {
 
 function validateWebLogin(value: unknown): WebLoginResponse {
   const item = requireRecord(value, 'account login')
+  if (item.mfa_required === true || item.mfaRequired === true) {
+    const ticket = typeof item.mfa_ticket === 'string' ? item.mfa_ticket : typeof item.mfaTicket === 'string' ? item.mfaTicket : ''
+    const method = typeof item.mfa_method === 'string' ? item.mfa_method : typeof item.mfaMethod === 'string' ? item.mfaMethod : 'totp'
+    if (ticket.length > 0) {
+      return {
+        mfaRequired: true,
+        mfaMethod: method,
+        mfaTicket: ticket,
+      }
+    }
+  }
   if (typeof item.token !== 'string' || item.token.length < 16
     || !Number.isSafeInteger(item.expiresAt)
     || typeof item.account !== 'string' || item.account.length === 0 || item.account.length > 254
@@ -711,8 +763,9 @@ function responseErrorCode(status: number, serverCode: unknown): string {
   if ((status === 401 || status === 403) && typeof serverCode === 'string') return serverCode
   if (status === 401 || status === 403) return 'REQUEST_REJECTED'
   if (typeof serverCode === 'string' && !AUTHORIZATION_ERROR_CODES.has(serverCode)) return serverCode
+  if (status === 404 && typeof serverCode === 'string') return serverCode
   if (status === 404) return 'DEVICE_NOT_FOUND'
-  return 'INVALID_MESSAGE'
+  return typeof serverCode === 'string' ? serverCode : 'INVALID_MESSAGE'
 }
 
 const AUTHORIZATION_ERROR_CODES = new Set([

@@ -79443,10 +79443,11 @@ var ClientControl = class {
       if (endpoint === "client.account.providers") return ok(await this.context.server.oauthProviders());
       if (endpoint === "client.account.login") {
         const value = record3(payload);
-        if (typeof value.email !== "string" || typeof value.password !== "string") {
+        const mfa = typeof value.mfaTicket === "string" && typeof value.totpCode === "string" ? { ticket: value.mfaTicket, code: value.totpCode } : void 0;
+        if (!mfa && (typeof value.email !== "string" || typeof value.password !== "string")) {
           throw new ClientModeError("INVALID_MESSAGE", "Email and password are required.");
         }
-        return ok(await this.context.authorizeClientWithAccount(value.email, value.password));
+        return ok(await this.context.authorizeClientWithAccount(String(value.email ?? ""), String(value.password ?? ""), mfa));
       }
       if (endpoint === "client.account.qr.start") {
         const value = record3(payload);
@@ -85554,16 +85555,25 @@ var HostServerApi = class {
       await this.clearAuthorization();
     }
   }
-  async authorizeWithAccount(identity3, email3, password, recoverIdentity) {
+  async authorizeWithAccount(identity3, email3, password, recoverIdentity, mfa) {
     this.bindIdentity(identity3);
-    const account = email3.trim();
-    if (account.length === 0 || password.length === 0) {
-      throw new ServerApiError("INVALID_MESSAGE", "Email and password are required.", false);
+    let payload;
+    if (mfa !== void 0 && mfa.ticket.length > 0 && mfa.code.length > 0) {
+      payload = { mfa_ticket: mfa.ticket, code: mfa.code };
+    } else {
+      const account = email3.trim();
+      if (account.length === 0 || password.length === 0) {
+        throw new ServerApiError("INVALID_MESSAGE", "Email and password are required.", false);
+      }
+      payload = { email: account, password };
     }
     const login2 = validateWebLogin(await this.publicRequest("/api/v1/auth/login", {
       method: "POST",
-      body: JSON.stringify({ email: account, password })
+      body: JSON.stringify(payload)
     }));
+    if ("mfaRequired" in login2) {
+      return login2;
+    }
     const authorization = {
       accountToken: login2.token,
       account: login2.account,
@@ -85912,7 +85922,30 @@ var HostServerApi = class {
       const body = await parseBody(response);
       signal.throwIfAborted();
       if (!response.ok) {
-        const envelope = isErrorEnvelope(body) ? body : void 0;
+        let envelope = isErrorEnvelope(body) ? body : void 0;
+        if (envelope === void 0 && typeof body === "object" && body !== null && !Array.isArray(body)) {
+          const rec = body;
+          if (typeof rec.error_detail === "object" && rec.error_detail !== null && !Array.isArray(rec.error_detail)) {
+            const detail = rec.error_detail;
+            if (typeof detail.code === "string" && detail.code.length > 0) {
+              envelope = {
+                error: {
+                  code: detail.code,
+                  message: typeof detail.message === "string" && detail.message.length > 0 ? detail.message : detail.code,
+                  retryable: typeof detail.retryable === "boolean" ? detail.retryable : response.status >= 500 || response.status === 429
+                }
+              };
+            }
+          } else if (typeof rec.error === "string" && rec.error.length > 0) {
+            envelope = {
+              error: {
+                code: rec.error,
+                message: typeof rec.message === "string" && rec.message.length > 0 ? rec.message : rec.error,
+                retryable: response.status >= 500 || response.status === 429
+              }
+            };
+          }
+        }
         if ((response.status === 401 || response.status === 403) && envelope === void 0) {
           throw new ServerApiError(
             "CONNECTION_FAILED",
@@ -85985,6 +86018,17 @@ function validateTokens(value) {
 }
 function validateWebLogin(value) {
   const item = requireRecord(value, "account login");
+  if (item.mfa_required === true || item.mfaRequired === true) {
+    const ticket = typeof item.mfa_ticket === "string" ? item.mfa_ticket : typeof item.mfaTicket === "string" ? item.mfaTicket : "";
+    const method = typeof item.mfa_method === "string" ? item.mfa_method : typeof item.mfaMethod === "string" ? item.mfaMethod : "totp";
+    if (ticket.length > 0) {
+      return {
+        mfaRequired: true,
+        mfaMethod: method,
+        mfaTicket: ticket
+      };
+    }
+  }
   if (typeof item.token !== "string" || item.token.length < 16 || !Number.isSafeInteger(item.expiresAt) || typeof item.account !== "string" || item.account.length === 0 || item.account.length > 254 || typeof item.isAdmin !== "boolean") {
     throw new ServerApiError("INVALID_MESSAGE", "The Server returned an invalid account session.", false);
   }
@@ -86026,8 +86070,9 @@ function responseErrorCode(status2, serverCode) {
   if ((status2 === 401 || status2 === 403) && typeof serverCode === "string") return serverCode;
   if (status2 === 401 || status2 === 403) return "REQUEST_REJECTED";
   if (typeof serverCode === "string" && !AUTHORIZATION_ERROR_CODES.has(serverCode)) return serverCode;
+  if (status2 === 404 && typeof serverCode === "string") return serverCode;
   if (status2 === 404) return "DEVICE_NOT_FOUND";
-  return "INVALID_MESSAGE";
+  return typeof serverCode === "string" ? serverCode : "INVALID_MESSAGE";
 }
 var AUTHORIZATION_ERROR_CODES = /* @__PURE__ */ new Set([
   "ACCOUNT_AUTH_REQUIRED",
@@ -87946,15 +87991,18 @@ var ClientModeRuntime = class {
     const message = status2.error === "DEVICE_REVOKED" ? "The local Host was revoked on the Server. Sign out and authorize this Host again." : "The local Host authorization is no longer valid. Sign out and authorize this Host again.";
     throw new ClientModeError(status2.error, message);
   }
-  async authorizeClientWithAccount(email3, password) {
+  async authorizeClientWithAccount(email3, password, mfa) {
     let authorization;
     try {
-      authorization = await this.server.authorizeWithAccount(this.requireIdentity(), email3, password);
+      authorization = await this.server.authorizeWithAccount(this.requireIdentity(), email3, password, void 0, mfa);
     } catch (error62) {
       if (!(error62 instanceof ServerApiError) || error62.code !== "DEVICE_REVOKED") throw error62;
       this.identity = await this.identities.reset(this.config.deviceName);
       this.server.bindIdentity(this.identity);
-      authorization = await this.server.authorizeWithAccount(this.identity, email3, password);
+      authorization = await this.server.authorizeWithAccount(this.identity, email3, password, void 0, mfa);
+    }
+    if (typeof authorization === "object" && authorization !== null && "mfaRequired" in authorization && authorization.mfaRequired) {
+      return authorization;
     }
     await this.authorizeHostByDefault();
     this.clientAuthRequired = false;
@@ -98112,13 +98160,22 @@ var PluginControlRuntime = class {
     if (value.role === "host" && typeof value.registrationCode === "string" && value.registrationCode.trim() !== "") {
       authorization = await api.authorizeHostWithCode(identity3, value.registrationCode);
     } else {
-      if (typeof value.email !== "string" || typeof value.password !== "string") {
+      const mfa = typeof value.mfaTicket === "string" && typeof value.totpCode === "string" ? { ticket: value.mfaTicket, code: value.totpCode } : void 0;
+      if (!mfa && (typeof value.email !== "string" || typeof value.password !== "string")) {
         throw new ClientModeError("INVALID_MESSAGE", "Email and password are required for account authorization.");
       }
-      authorization = await api.authorizeWithAccount(identity3, value.email, value.password, async () => {
+      authorization = await api.authorizeWithAccount(identity3, String(value.email ?? ""), String(value.password ?? ""), async () => {
         identity3 = await identities.reset(hostname4());
         return identity3;
-      });
+      }, mfa);
+      if ("mfaRequired" in authorization) {
+        return {
+          status: "mfa_required",
+          mfaRequired: true,
+          mfaTicket: authorization.mfaTicket,
+          mfaMethod: authorization.mfaMethod
+        };
+      }
     }
     if (value.role === "client" && resolveConfig(this.settings.get()).hostControl?.enabled !== false) {
       await this.client?.authorizeHostByDefault();
@@ -103022,6 +103079,9 @@ var HostPluginRuntime = class {
       this.logger.info("Rotated revoked Host identity before account authorization");
       return this.identity;
     });
+    if ("mfaRequired" in result) {
+      return result;
+    }
     this.serverConnection?.resume();
     this.logger.info("Host account authorized");
     return result;

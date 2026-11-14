@@ -258,13 +258,24 @@ export class PluginControlRuntime {
     if (value.role === 'host' && typeof value.registrationCode === 'string' && value.registrationCode.trim() !== '') {
       authorization = await api.authorizeHostWithCode(identity, value.registrationCode)
     } else {
-      if (typeof value.email !== 'string' || typeof value.password !== 'string') {
+      const mfa = typeof value.mfaTicket === 'string' && typeof value.totpCode === 'string'
+        ? { ticket: value.mfaTicket, code: value.totpCode }
+        : undefined
+      if (!mfa && (typeof value.email !== 'string' || typeof value.password !== 'string')) {
         throw new ClientModeError('INVALID_MESSAGE', 'Email and password are required for account authorization.')
       }
-      authorization = await api.authorizeWithAccount(identity, value.email, value.password, async () => {
+      authorization = await api.authorizeWithAccount(identity, String(value.email ?? ''), String(value.password ?? ''), async () => {
         identity = await identities.reset(hostname())
         return identity
-      })
+      }, mfa)
+      if ('mfaRequired' in authorization) {
+        return {
+          status: 'mfa_required',
+          mfaRequired: true,
+          mfaTicket: authorization.mfaTicket,
+          mfaMethod: authorization.mfaMethod,
+        }
+      }
     }
     if (value.role === 'client' && resolveConfig(this.settings.get()).hostControl?.enabled !== false) {
       await this.client?.authorizeHostByDefault()
