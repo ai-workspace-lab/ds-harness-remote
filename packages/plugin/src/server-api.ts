@@ -204,7 +204,6 @@ export class HostServerApi {
       // Older servers expose only individual status endpoints. Do not hide
       // network errors or malformed discovery responses behind this fallback.
       const legacy = [
-        { id: 'zhihu', displayName: 'Zhihu', startUrl: '/api/v1/auth/oauth/start', statusUrl: '/api/v1/auth/oauth/status' },
         { id: 'github', displayName: 'GitHub', startUrl: '/api/v1/auth/oauth/github/start', statusUrl: '/api/v1/auth/oauth/github/status' },
       ]
       const items = await Promise.all(legacy.map(async ({ statusUrl, ...provider }) => {
@@ -236,13 +235,14 @@ export class HostServerApi {
     })
     const capabilities = value.capabilities
     if (typeof capabilities === 'object' && capabilities !== null
-      && (capabilities as Record<string, unknown>).devicePairing === 'dsh-pairing-v1') {
-      providers.push({ id: 'dsh-go-pairing-v1', displayName: 'DSH-Go', startUrl: '/api/v1/device-pairing', devicePairing: true })
+      && ((capabilities as Record<string, unknown>).devicePairing === 'dsh-pairing-v1'
+        || (capabilities as Record<string, unknown>).devicePairing === 'xworkmate-pairing-v1')) {
+      providers.push({ id: 'xworkmate-pairing-v1', displayName: 'XWorkmate App', startUrl: '/api/v1/device-pairing', devicePairing: true })
     }
     return providers
   }
 
-  async startOAuthQrLogin(provider: OAuthProvider = 'zhihu'): Promise<OAuthQrSession> {
+  async startOAuthQrLogin(provider: OAuthProvider = 'github'): Promise<OAuthQrSession> {
     const entry = (await this.oauthProviders()).find(item => item.id === provider)
     if (entry?.qrStartUrl == null) {
       throw new ServerApiError('OAUTH_PROVIDER_UNAVAILABLE', 'This OAuth provider is unavailable for QR login.', false)
@@ -255,7 +255,6 @@ export class HostServerApi {
     if (typeof value.qrId !== 'string' || value.qrId.length < 20
       || scanUrl === undefined
       || !Number.isSafeInteger(value.expiresIn)
-      || (provider !== 'zhihu' && value.provider !== provider)
       || (value.provider !== undefined && value.provider !== provider)) {
       throw new ServerApiError('INVALID_MESSAGE', 'The Server returned an invalid QR login session.', false)
     }

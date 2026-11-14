@@ -10,17 +10,17 @@ import { serverSession } from '../src/services/server-session'
 import type { DeviceIdentity, RedirectLoginMethod } from '../src/types'
 
 const baseUrl = 'https://remote.example.com'
-const zhihu: OAuthProviderInfo = {
-  id: 'zhihu',
-  displayName: '知乎',
+const github: OAuthProviderInfo = {
+  id: 'github',
+  displayName: 'GitHub',
   startUrl: '/api/v1/auth/oauth/start',
-  qrStartUrl: '/api/v1/auth/oauth/qr/start?provider=zhihu',
+  qrStartUrl: '/api/v1/auth/oauth/qr/start?provider=github',
 }
 
 describe('QR sign-in Server API', () => {
   it('uses the selected discovered OAuth entry and preserves its method through registration', async () => {
     await runScenarios([
-      { id: 'zhihu', method: 'oauth' },
+      { id: 'github', method: 'oauth' },
       { id: 'github', method: 'github-oauth' },
       { id: 'google', method: 'google-oauth' },
     ].map(({ id, method }) => ({
@@ -51,13 +51,13 @@ describe('QR sign-in Server API', () => {
   it('discovers Server-owned providers and falls back to legacy status endpoints', async () => {
     const discovery = vi.fn<typeof fetch>(async () => jsonResponse({
       items: [
-        zhihu,
+        github,
         { id: 'google', displayName: 'Google', startUrl: '/api/v1/auth/oauth/google/start', qrStartUrl: '/api/v1/auth/oauth/qr/start?provider=google' },
         { id: 'github', displayName: 'GitHub', startUrl: '/api/v1/auth/oauth/github/start' },
       ],
     }))
     expect(await new RemoteServerApi(baseUrl, undefined, discovery).oauthProviders()).toEqual([
-      zhihu,
+      github,
       { id: 'google', displayName: 'Google', startUrl: '/api/v1/auth/oauth/google/start', qrStartUrl: '/api/v1/auth/oauth/qr/start?provider=google' },
       { id: 'github', displayName: 'GitHub', startUrl: '/api/v1/auth/oauth/github/start' },
     ])
@@ -71,21 +71,21 @@ describe('QR sign-in Server API', () => {
       return jsonResponse({}, 404)
     })
     expect(await new RemoteServerApi(baseUrl, undefined, fallback).oauthProviders()).toEqual([{
-      id: 'zhihu',
-      displayName: '知乎',
+      id: 'github',
+      displayName: 'GitHub',
       startUrl: '/api/v1/auth/oauth/start',
-      qrStartUrl: '/api/v1/auth/oauth/qr/start?provider=zhihu',
+      qrStartUrl: '/api/v1/auth/oauth/qr/start?provider=github',
     }])
   })
 
   it('rejects unsafe or malformed provider descriptors', async () => {
     await runScenarios([
-      { name: 'cross-origin provider start URL', item: { ...zhihu, startUrl: 'https://evil.example/api/v1/auth/oauth/start' } },
-      { name: 'protocol-relative QR URL', item: { ...zhihu, qrStartUrl: '//evil.example/api/v1/auth/oauth/qr/start' } },
-      { name: 'path traversal', item: { ...zhihu, qrStartUrl: '/api/v1/auth/../oauth/qr/start' } },
-      { name: 'missing display name', item: { ...zhihu, displayName: ' ' } },
-      { name: 'invalid provider id', item: { ...zhihu, id: 'bad id' } },
-      { name: 'duplicate provider id', items: [zhihu, zhihu] },
+      { name: 'cross-origin provider start URL', item: { ...github, startUrl: 'https://evil.example/api/v1/auth/oauth/start' } },
+      { name: 'protocol-relative QR URL', item: { ...github, qrStartUrl: '//evil.example/api/v1/auth/oauth/qr/start' } },
+      { name: 'path traversal', item: { ...github, qrStartUrl: '/api/v1/auth/../oauth/qr/start' } },
+      { name: 'missing display name', item: { ...github, displayName: ' ' } },
+      { name: 'invalid provider id', item: { ...github, id: 'bad id' } },
+      { name: 'duplicate provider id', items: [github, github] },
     ].map(scenario => ({
       name: scenario.name,
       run: async () => {
@@ -100,7 +100,7 @@ describe('QR sign-in Server API', () => {
 
   it('creates a QR session and rejects unsafe session responses', async () => {
     await runScenarios([
-      { name: 'valid session', body: { qrId: 'q'.repeat(24), scanUrl: 'https://remote.example.com/api/v1/auth/q/qr', expiresIn: 600, provider: 'zhihu' }, accepted: true },
+      { name: 'valid session', body: { qrId: 'q'.repeat(24), scanUrl: 'https://remote.example.com/api/v1/auth/q/qr', expiresIn: 600, provider: 'github' }, accepted: true },
       { name: 'cross-origin scan URL', body: { qrId: 'q'.repeat(24), scanUrl: 'https://evil.example/api/v1/auth/q/qr', expiresIn: 600 }, accepted: false },
       { name: 'short QR id', body: { qrId: 'short', scanUrl: 'https://remote.example.com/api/v1/auth/q/qr', expiresIn: 600 }, accepted: false },
       { name: 'invalid expiry', body: { qrId: 'q'.repeat(24), scanUrl: 'https://remote.example.com/api/v1/auth/q/qr', expiresIn: 0 }, accepted: false },
@@ -115,15 +115,15 @@ describe('QR sign-in Server API', () => {
         })
         const api = new RemoteServerApi(baseUrl, undefined, fetchImplementation)
         if (scenario.accepted) {
-          expect(await api.startOAuthQrLogin(zhihu)).toEqual({
+          expect(await api.startOAuthQrLogin(github)).toEqual({
             qrId: 'q'.repeat(24),
             scanUrl: 'https://remote.example.com/api/v1/auth/q/qr',
             expiresIn: 600,
           })
-          expect(calls[0]?.url).toBe(`${baseUrl}${zhihu.qrStartUrl}`)
+          expect(calls[0]?.url).toBe(`${baseUrl}${github.qrStartUrl}`)
           expect(calls[0]?.init?.method).toBe('POST')
         } else {
-          await expect(api.startOAuthQrLogin(zhihu)).rejects.toMatchObject({ code: 'INVALID_MESSAGE' })
+          await expect(api.startOAuthQrLogin(github)).rejects.toMatchObject({ code: 'INVALID_MESSAGE' })
         }
       },
     })))

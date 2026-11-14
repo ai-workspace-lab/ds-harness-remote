@@ -116,7 +116,7 @@ async function login(args: readonly string[], runtime: CliRuntime): Promise<numb
     return 0
   }
   const selected = args[0] === undefined
-    ? providers.find(item => item.id === 'zhihu') ?? providers[0]
+    ? providers.find(item => item.id === 'github') ?? providers[0]
     : providers.find(item => item.id === args[0])
   if (selected === undefined) throw new CliUsageError('OAuth provider unavailable. Run "ds-harness-remote login list" to see available providers.')
   const provider = selected.id

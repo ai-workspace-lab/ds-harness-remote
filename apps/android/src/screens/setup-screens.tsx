@@ -39,13 +39,13 @@ import type { ActivityDockMode, ThemePreference, TypographyDensity } from '../ui
 const defaultServerUrl = 'https://dsh.r2049.cn'
 const updateUrl = 'https://github.com/liguobao/ds-harness-remote/releases/latest'
 const releaseApiUrl = 'https://api.github.com/repos/liguobao/ds-harness-remote/releases/latest'
-const developerUrl = 'https://www.zhihu.com/people/codelover'
-const twitterUrl = 'https://x.com/liguobao2077'
+const developerUrl = 'https://github.com/ai-workspace-lab/xworkmate-app'
+const twitterUrl = 'https://xworktech.com'
 
 type SetupLoginMethod = LoginMethod
 
 function qrProviderFor(method: SetupLoginMethod): string | undefined {
-  if (method === 'oauth') return 'zhihu'
+  if (method === 'oauth') return 'github'
   if (method === 'github-oauth') return 'github'
   if (method === 'google-oauth') return 'google'
   return undefined
@@ -185,19 +185,6 @@ export function ServerSetupScreen({ onComplete, onBack, onMore, serverExpanded, 
     if (serverDirty) return
     const url = await startOAuth(serverUrl)
     if (url === undefined) return
-    if (Platform.OS === 'android') {
-      try {
-        // Zhihu's hybrid route takes zh_url; an unknown route only opens its home screen.
-        // Keep the server OAuth entry and nested return_to intact.
-        await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
-          data: `zhihu://hybrid?zh_url=${encodeURIComponent(url)}`,
-          packageName: 'com.zhihu.android',
-        })
-        return
-      } catch {
-        // Zhihu may be missing or unable to handle this link; use the browser.
-      }
-    }
     await Linking.openURL(url)
   }
 

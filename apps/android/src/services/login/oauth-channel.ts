@@ -3,8 +3,8 @@ import { createOAuthRedirectChannel } from './oauth-redirect-channel'
 
 export const oauthLoginChannel = createOAuthRedirectChannel({
   method: 'oauth',
-  providerId: 'zhihu',
-  unsupportedError: zhCN.runtime.zhihuUnsupported,
+  providerId: 'github',
+  unsupportedError: zhCN.runtime.githubUnsupported,
 })
 
 export const githubOAuthLoginChannel = createOAuthRedirectChannel({

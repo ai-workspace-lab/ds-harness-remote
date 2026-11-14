@@ -73,7 +73,7 @@ export class ClientControl {
       }
       if (endpoint === 'client.account.qr.start') {
         const value = record(payload)
-        const provider = value.provider ?? 'zhihu'
+        const provider = value.provider ?? 'github'
         if (typeof provider !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/.test(provider)) {
           throw new ClientModeError('INVALID_MESSAGE', 'An OAuth provider ID is required.')
         }

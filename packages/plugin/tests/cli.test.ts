@@ -93,14 +93,14 @@ describe('Remote CLI', () => {
       .resolves.toMatchObject({ authorizationMethod: 'account', account: 'host@example.com' })
   })
 
-  it('defaults login to Zhihu and reports an expired QR session', async () => {
+  it('defaults login to GitHub and reports an expired QR session', async () => {
     const dshHome = join(tmpdir(), `dsh-remote-cli-expired-${crypto.randomUUID()}`)
     directories.push(dshHome)
     const output = writer()
     const errors = writer()
     const start = vi.fn(async () => ({
-      qrId: 'zhihu-qr-session-1234567890',
-      scanUrl: 'https://dsh.r2049.cn/api/v1/auth/q/zhihu-qr-session-1234567890',
+      qrId: 'github-qr-session-1234567890',
+      scanUrl: 'https://dsh.r2049.cn/api/v1/auth/q/github-qr-session-1234567890',
       expiresIn: 600,
     }))
     const poll = vi.fn(async () => ({ status: 'expired' as const }))
@@ -109,9 +109,9 @@ describe('Remote CLI', () => {
       env: { DSH_HOME: dshHome },
       stdout: output,
       stderr: errors,
-      renderQr: async () => '<zhihu-qr>',
+      renderQr: async () => '<github-qr>',
       createHostApi: () => ({
-        oauthProviders: vi.fn(async () => [providerInfo('zhihu')]),
+        oauthProviders: vi.fn(async () => [providerInfo('github')]),
         startOAuthQrLogin: start,
         pollOAuthQrLogin: poll,
         bindIdentity: vi.fn(),
@@ -121,8 +121,8 @@ describe('Remote CLI', () => {
       }),
     })).resolves.toBe(1)
 
-    expect(start).toHaveBeenCalledWith('zhihu')
-    expect(output.text).toContain('<zhihu-qr>')
+    expect(start).toHaveBeenCalledWith('github')
+    expect(output.text).toContain('<github-qr>')
     expect(errors.text).toContain('QR login expired')
   })
 

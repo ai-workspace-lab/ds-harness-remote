@@ -79450,7 +79450,7 @@ var ClientControl = class {
       }
       if (endpoint === "client.account.qr.start") {
         const value = record3(payload);
-        const provider = value.provider ?? "zhihu";
+        const provider = value.provider ?? "github";
         if (typeof provider !== "string" || !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/.test(provider)) {
           throw new ClientModeError("INVALID_MESSAGE", "An OAuth provider ID is required.");
         }
@@ -85591,7 +85591,6 @@ var HostServerApi = class {
     } catch (error62) {
       if (!(error62 instanceof ServerApiError) || error62.status !== 404) throw error62;
       const legacy = [
-        { id: "zhihu", displayName: "Zhihu", startUrl: "/api/v1/auth/oauth/start", statusUrl: "/api/v1/auth/oauth/status" },
         { id: "github", displayName: "GitHub", startUrl: "/api/v1/auth/oauth/github/start", statusUrl: "/api/v1/auth/oauth/github/status" }
       ];
       const items = await Promise.all(legacy.map(async ({ statusUrl, ...provider }) => {
@@ -85621,12 +85620,12 @@ var HostServerApi = class {
       };
     });
     const capabilities = value.capabilities;
-    if (typeof capabilities === "object" && capabilities !== null && capabilities.devicePairing === "dsh-pairing-v1") {
-      providers.push({ id: "dsh-go-pairing-v1", displayName: "DSH-Go", startUrl: "/api/v1/device-pairing", devicePairing: true });
+    if (typeof capabilities === "object" && capabilities !== null && (capabilities.devicePairing === "dsh-pairing-v1" || capabilities.devicePairing === "xworkmate-pairing-v1")) {
+      providers.push({ id: "xworkmate-pairing-v1", displayName: "XWorkmate App", startUrl: "/api/v1/device-pairing", devicePairing: true });
     }
     return providers;
   }
-  async startOAuthQrLogin(provider = "zhihu") {
+  async startOAuthQrLogin(provider = "github") {
     const entry = (await this.oauthProviders()).find((item) => item.id === provider);
     if (entry?.qrStartUrl == null) {
       throw new ServerApiError("OAUTH_PROVIDER_UNAVAILABLE", "This OAuth provider is unavailable for QR login.", false);
@@ -85636,7 +85635,7 @@ var HostServerApi = class {
       body: "{}"
     }), "QR login");
     const scanUrl = normalizeOAuthScanUrl(value.scanUrl, this.baseUrl);
-    if (typeof value.qrId !== "string" || value.qrId.length < 20 || scanUrl === void 0 || !Number.isSafeInteger(value.expiresIn) || provider !== "zhihu" && value.provider !== provider || value.provider !== void 0 && value.provider !== provider) {
+    if (typeof value.qrId !== "string" || value.qrId.length < 20 || scanUrl === void 0 || !Number.isSafeInteger(value.expiresIn) || value.provider !== void 0 && value.provider !== provider) {
       throw new ServerApiError("INVALID_MESSAGE", "The Server returned an invalid QR login session.", false);
     }
     return { qrId: value.qrId, scanUrl, expiresIn: value.expiresIn };
@@ -103783,7 +103782,7 @@ async function login(args, runtime) {
 `).join(""));
     return 0;
   }
-  const selected = args[0] === void 0 ? providers.find((item) => item.id === "zhihu") ?? providers[0] : providers.find((item) => item.id === args[0]);
+  const selected = args[0] === void 0 ? providers.find((item) => item.id === "github") ?? providers[0] : providers.find((item) => item.id === args[0]);
   if (selected === void 0) throw new CliUsageError('OAuth provider unavailable. Run "ds-harness-remote login list" to see available providers.');
   const provider = selected.id;
   const session2 = await context.api.startOAuthQrLogin(provider);

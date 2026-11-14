@@ -100,8 +100,8 @@ DSH 0.2.2 起，npm 安装支持在插件页检查版本和一键更新；热更
 ## 快速开始
 
 1. 从 DeepSeek Harness 侧边栏打开 **Remote** 入口。
-2. 按需选择登录方式：「知乎」、「Github」、[Google ] 授权登录均已支持，账号密码登录（使用邀请码注册，可邮件本仓库作者申请）
-3. 在另一台设备上使用 DeepSeek Harness安装同样插件，根据1、2完成同样方式的登录。也可以按需使用Remote Web、iOS、Android、DSH Go等客户端，即开即用，无需安装任何插件。
+2. 按需选择登录方式：「GitHub」授权登录、[XWorkmate App](https://github.com/ai-workspace-lab/xworkmate-app) 扫码配对或账号密码登录。
+3. 在移动端或另一台设备上配合 [XWorkmate App](https://github.com/ai-workspace-lab/xworkmate-app) 扫码配对连接，底层支持通过 [XConnect](https://github.com/ai-workspace-xstream/XConnect-Gateway) 零信任互联网络安全直连。
 4. 选择在线 Host，再选择已有 Workspace 或浏览远端目录后打开。
 
 默认使用本项目提供的[https://dsh.r2049.cn](https://dsh.r2049.cn)托管 Remote Server。

@@ -134,7 +134,7 @@ describe.each(['settings', 'workspace'] as const)('%s provider fallback', entran
         subscribe: (listener: (next: any) => void) => { listeners.add(listener); return () => { listeners.delete(listener) } },
         getSnapshot: () => undefined,
       },
-      t: (key: string) => key, view: 'page', wide: true, preferredQrProvider: 'zhihu',
+      t: (key: string) => key, view: 'page', wide: true, preferredQrProvider: 'default',
       subscribeOpen: () => () => {},
       sidebarEntry: { read: () => 'standard', subscribe: () => () => {}, publish: () => {} },
     }
@@ -188,7 +188,7 @@ describe.each(['settings', 'workspace'] as const)('%s provider fallback', entran
   })
 
   it('clears the previous server pairing capability after saving another server', async () => {
-    const providers = vi.fn().mockResolvedValueOnce([{ id: 'zhihu', devicePairing: true }])
+    const providers = vi.fn().mockResolvedValueOnce([{ id: 'github', devicePairing: true }])
       .mockRejectedValue(new Error('new server provider network failed'))
     const login = await openLogin(providers)
     findElement(login.tree, (node: any) => node.props?.role === 'tab' && node.children.includes('pairingLoginTab')).props.onClick()
@@ -207,7 +207,7 @@ describe.each(['settings', 'workspace'] as const)('%s provider fallback', entran
 
   it('unmounts pairing when another window changes server before discovery settles', async () => {
     let rejectDiscovery!: (reason: Error) => void
-    const providers = vi.fn().mockResolvedValueOnce([{ id: 'zhihu', devicePairing: true }])
+    const providers = vi.fn().mockResolvedValueOnce([{ id: 'github', devicePairing: true }])
       .mockImplementation(() => new Promise((_, reject) => { rejectDiscovery = reject }))
     const login = await openLogin(providers)
     findElement(login.tree, (node: any) => node.props?.role === 'tab' && node.children.includes('pairingLoginTab')).props.onClick()
@@ -227,14 +227,14 @@ describe.each(['settings', 'workspace'] as const)('%s provider fallback', entran
   it('retries discovery and keeps pairing selected while a later discovery fails', async () => {
     let rejectDiscovery!: (reason: Error) => void
     const providers = vi.fn().mockRejectedValueOnce(new Error('provider network failed'))
-      .mockResolvedValueOnce([{ id: 'zhihu', displayName: 'Zhihu', devicePairing: true, qrStartUrl: 'https://example.com/qr' }])
+      .mockResolvedValueOnce([{ id: 'github', displayName: 'GitHub', devicePairing: true, qrStartUrl: 'https://example.com/qr' }])
       .mockImplementation(() => new Promise((_, reject) => { rejectDiscovery = reject }))
     const login = await openLogin(providers)
     findElement(login.tree, (node: any) => node.type === 'button' && node.children.includes('retryLoginProviders')).props.onClick()
     login.render()
     let tree = await login.settle()
     expect(providers).toHaveBeenCalledTimes(2)
-    expect(findElement(tree, (node: any) => node.props?.role === 'tab' && node.props?.id?.includes('oauth:zhihu'))?.props['aria-selected']).toBe(true)
+    expect(findElement(tree, (node: any) => node.props?.role === 'tab' && node.props?.id?.includes('oauth:github'))?.props['aria-selected']).toBe(true)
     login.props.preferredQrProvider = 'github'
     login.render()
     tree = login.render()
@@ -409,7 +409,7 @@ describe('RemotePluginOptions inline sign-in suite', () => {
         return { mode: 'local', available: false, hostAuthorizationAvailable: true }
       }
       if (endpoint === 'client.account.providers') {
-        return [{ id: 'zhihu', displayName: 'Zhihu', qrStartUrl: 'https://example.com/qr' }]
+        return [{ id: 'github', displayName: 'GitHub', qrStartUrl: 'https://example.com/qr' }]
       }
       if (endpoint === 'client.account.qr.start') {
         return { qrId: 'qr-session-test-id-1234567890', scanUrl: 'https://example.com/scan', expiresIn: 120 }
@@ -429,7 +429,7 @@ describe('RemotePluginOptions inline sign-in suite', () => {
       return Component({
         control: controlSpy,
         statusFeed,
-        preferredQrProvider: 'zhihu',
+        preferredQrProvider: 'github',
         t: (k: string) => k,
         view: 'page',
       })
@@ -444,7 +444,7 @@ describe('RemotePluginOptions inline sign-in suite', () => {
 
     const { tree: qrTree, el: qrImg } = await waitForElement(render, (n: any) => n.type === 'img')
     tree = qrTree
-    expect(controlSpy).toHaveBeenCalledWith('client.account.qr.start', { provider: 'zhihu' })
+    expect(controlSpy).toHaveBeenCalledWith('client.account.qr.start', { provider: 'github' })
     expect(qrImg).not.toBeNull()
 
     // Wait for polling to hit complete
@@ -551,7 +551,7 @@ describe('RemotePluginOptions inline sign-in suite', () => {
         return { mode: 'local', available: false, hostAuthorizationAvailable: true }
       }
       if (endpoint === 'client.account.providers') {
-        return [{ id: 'zhihu', displayName: 'Zhihu', qrStartUrl: 'https://example.com/qr' }]
+        return [{ id: 'github', displayName: 'GitHub', qrStartUrl: 'https://example.com/qr' }]
       }
       if (endpoint === 'client.account.qr.start') {
         startCount++
@@ -571,7 +571,7 @@ describe('RemotePluginOptions inline sign-in suite', () => {
       return Component({
         control: controlSpy,
         statusFeed,
-        preferredQrProvider: 'zhihu',
+        preferredQrProvider: 'github',
         t: (k: string) => k,
         view: 'page',
       })
@@ -624,7 +624,7 @@ describe('RemotePluginOptions inline sign-in suite', () => {
         return { mode: 'local', available: false, hostAuthorizationAvailable: true }
       }
       if (endpoint === 'client.account.providers') {
-        return [{ id: 'zhihu', displayName: 'Zhihu', qrStartUrl: 'https://example.com/qr' }]
+        return [{ id: 'github', displayName: 'GitHub', qrStartUrl: 'https://example.com/qr' }]
       }
       if (endpoint === 'client.account.qr.start') {
         return { qrId: 'qr-session-closing-test', scanUrl: 'https://example.com/scan', expiresIn: 120 }
@@ -642,7 +642,7 @@ describe('RemotePluginOptions inline sign-in suite', () => {
       return Component({
         control: controlSpy,
         statusFeed,
-        preferredQrProvider: 'zhihu',
+        preferredQrProvider: 'github',
         t: (k: string) => k,
         view: 'page',
       })
@@ -688,7 +688,7 @@ describe('RemotePluginOptions inline sign-in suite', () => {
     const controlSpy = vi.fn(async (endpoint: string, payload?: any) => {
       if (endpoint === 'client.account.providers') {
         providerCalls++
-        return [{ id: 'zhihu', displayName: 'Zhihu', qrStartUrl: 'https://example.com/qr' }]
+        return [{ id: 'github', displayName: 'GitHub', qrStartUrl: 'https://example.com/qr' }]
       }
       if (endpoint === 'settings.get') {
         settingsGetCalls++
@@ -717,7 +717,7 @@ describe('RemotePluginOptions inline sign-in suite', () => {
         return { mode: 'local', available: false, hostAuthorizationAvailable: true }
       }
       if (endpoint === 'client.account.providers') {
-        return [{ id: 'zhihu', displayName: 'Zhihu', qrStartUrl: 'https://example.com/qr' }]
+        return [{ id: 'github', displayName: 'GitHub', qrStartUrl: 'https://example.com/qr' }]
       }
       if (endpoint === 'client.account.qr.start') {
         startCalls++
@@ -736,7 +736,7 @@ describe('RemotePluginOptions inline sign-in suite', () => {
       return Component({
         control: controlSpy,
         statusFeed,
-        preferredQrProvider: 'zhihu',
+        preferredQrProvider: 'github',
         t: (k: string) => k,
         view: 'page',
       })
@@ -797,7 +797,7 @@ describe('RemotePluginOptions inline sign-in suite', () => {
       if (endpoint === 'client.account.providers') {
         providerCalls++
         if (providerCalls === 1) throw new Error('failed loading providers')
-        return [{ id: 'zhihu', displayName: 'Zhihu', qrStartUrl: 'https://example.com/qr' }]
+        return [{ id: 'github', displayName: 'GitHub', qrStartUrl: 'https://example.com/qr' }]
       }
       if (endpoint === 'client.account.qr.start') {
         return { qrId: 'qr-session-providers-recovered', scanUrl: 'https://example.com/scan', expiresIn: 120 }
@@ -812,7 +812,7 @@ describe('RemotePluginOptions inline sign-in suite', () => {
       return Component({
         control: controlSpy,
         statusFeed,
-        preferredQrProvider: 'zhihu',
+        preferredQrProvider: 'github',
         t: (k: string) => k,
         view: 'page',
       })
@@ -847,7 +847,7 @@ describe('RemotePluginOptions inline sign-in suite', () => {
     expect(findElement(tree, (n: any) => n.props?.type === 'password')).not.toBeNull()
     expect(findElement(tree, (n: any) => n.props?.className === 'dshRemotePasswordHint')?.children?.[0]).toBe('passwordHint')
 
-    const qrTab = findElement(tree, (n: any) => n.props?.id === 'dsh-remote-settings-oauth:zhihu-tab')
+    const qrTab = findElement(tree, (n: any) => n.props?.id === 'dsh-remote-settings-oauth:github-tab')
     expect(qrTab).not.toBeNull()
     qrTab.props.onClick()
     const { el: qrImgAgain } = await waitForElement(render, (n: any) => n.type === 'img')

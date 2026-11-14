@@ -112,7 +112,6 @@ export class RemoteServerApi {
       if (!(error instanceof RemoteApiError) || error.status !== 404) throw error
       const legacy: OAuthProviderInfo[] = []
       for (const [id, displayName, statusPath, startPath] of [
-        ['zhihu', '知乎', '/api/v1/auth/oauth/status', '/api/v1/auth/oauth/start'],
         ['github', 'GitHub', '/api/v1/auth/oauth/github/status', '/api/v1/auth/oauth/github/start'],
       ] as const) {
         try {

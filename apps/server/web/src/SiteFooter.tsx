@@ -14,6 +14,6 @@ export function SiteFooter() {
       <a href={DOWNLOAD_URL} target="_blank" rel="noreferrer" className="site-footer-link" aria-label="移动端"><MobileOutlined aria-hidden="true" /><span>移动端</span></a>
       <a href={IOS_BETA_URL} target="_blank" rel="noreferrer" className="site-footer-link" aria-label="iOS 内测"><AppleOutlined aria-hidden="true" /><span>iOS 内测</span></a>
     </div>
-    <a className="site-footer-credit" href="https://www.zhihu.com/people/codelover" target="_blank" rel="noreferrer">Power By 知乎@李国宝</a>
+    <a className="site-footer-credit" href="https://xworktech.com" target="_blank" rel="noreferrer">AI Workspace Lab</a>
   </footer>
 }
