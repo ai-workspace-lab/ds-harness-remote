@@ -1725,6 +1725,12 @@ Then enter the phone code on this computer and confirm binding.`,
     pairingUnsupported: "This Server does not support device pairing.",
     pairingError: `Could not finish pairing. Check the connection.
 If a code was sent, recover the original submission without changing it.`,
+    webrtcDesktopTab: "WebRTC Remote Desktop",
+    webrtcDesktopTitle: "WebRTC GUI Remote Desktop",
+    webrtcDesktopDesc: "Directly connect to Linux GUI desktop via standard WebRTC H.264 stream and low-latency input channels. Reusable with accounts.svc.plus SSO and workspace Bearer tokens.",
+    openWebrtcDesktop: "Open Remote Desktop",
+    copyDesktopUrl: "Copy Desktop URL",
+    desktopUrlCopied: "Desktop URL copied to clipboard.",
     remoteTools: "Inject Remote Tools",
     remoteToolsHint: "Expose remote_* tools in sessions. On by default; turn it off when you do not need them. Changes apply after restarting the Host.",
     remoteToolsSaved: "Remote Tools setting saved.",
@@ -2080,6 +2086,12 @@ If a code was sent, recover the original submission without changing it.`,
     pairingUnsupported: "\u5F53\u524D\u670D\u52A1\u5668\u4E0D\u652F\u6301\u8BBE\u5907\u626B\u7801\u914D\u5BF9\u3002",
     pairingError: `\u6682\u65F6\u65E0\u6CD5\u5B8C\u6210\u914D\u5BF9\uFF0C\u8BF7\u68C0\u67E5\u7F51\u7EDC\u3002
 \u82E5\u5DF2\u63D0\u4EA4\u9A8C\u8BC1\u7801\uFF0C\u8BF7\u6062\u590D\u539F\u63D0\u4EA4\uFF0C\u4E0D\u8981\u66F4\u6362\u9A8C\u8BC1\u7801\u3002`,
+    webrtcDesktopTab: "WebRTC \u8FDC\u7A0B\u684C\u9762",
+    webrtcDesktopTitle: "WebRTC \u56FE\u5F62\u8FDC\u7A0B\u684C\u9762",
+    webrtcDesktopDesc: "\u76F4\u8FDE Linux \u56FE\u5F62\u5DE5\u4F5C\u53F0\uFF0C\u652F\u6301\u6807\u51C6 WebRTC H.264 \u753B\u9762\u6355\u83B7\u4E0E\u539F\u751F\u53CC\u5411\u952E\u9F20\u63A7\u5236\u3002\u5DF2\u6253\u901A\u7EDF\u4E00\u8D26\u6237 SSO \u4E0E\u5DE5\u4F5C\u533A\u4EE4\u724C (Token) \u9274\u6743\u3002",
+    openWebrtcDesktop: "\u6253\u5F00\u8FDC\u7A0B\u684C\u9762",
+    copyDesktopUrl: "\u590D\u5236\u684C\u9762\u94FE\u63A5",
+    desktopUrlCopied: "\u684C\u9762\u94FE\u63A5\u5DF2\u590D\u5236\u5230\u526A\u8D34\u677F\u3002",
     remoteTools: "\u6CE8\u5165 Remote Tools",
     remoteToolsHint: "\u5728\u4F1A\u8BDD\u4E2D\u6CE8\u5165 remote_* \u5DE5\u5177\u3002\u9ED8\u8BA4\u5F00\u542F\uFF1B\u4E0D\u9700\u8981\u65F6\u53EF\u5173\u95ED\uFF0C\u91CD\u542F Host \u540E\u751F\u6548\u3002",
     remoteToolsSaved: "Remote Tools \u8BBE\u7F6E\u5DF2\u4FDD\u5B58\u3002",
@@ -3057,7 +3069,7 @@ If a code was sent, recover the original submission without changing it.`,
       let applyAssociations = (view) => {
         setAssociations(view.associations ?? (view.association === void 0 ? {} : { host: view.association }));
       }, applyView = (view, updateAssociations = !0) => {
-        setSettingsView(view), serverDraftEdited.current || setServerUrl(view.config.serverUrl ?? "https://dsh.r2049.cn"), setTerminalEnabled(view.config.terminal?.enabled ?? !0), setDebugLogging(view.config.logLevel === "debug"), setRemoteToolsEnabled(view.config.remoteTools?.enabled ?? !0), setSidebarEntry(view.config.sidebar?.entry ?? "standard"), props.sidebarEntry?.publish(view.config.sidebar?.entry ?? "standard"), setAcpBackends((view.config.acp?.backends ?? []).map((item) => ({ id: item.id, enabled: item.enabled !== !1 }))), setAcpAvailability(view.acpAvailability ?? {}), updateAssociations && applyAssociations(view), setWritable(view.writable), setLoaded(!0);
+        setSettingsView(view), serverDraftEdited.current || setServerUrl(view.config.serverUrl ?? "https://desktop.svc.plus"), setTerminalEnabled(view.config.terminal?.enabled ?? !0), setDebugLogging(view.config.logLevel === "debug"), setRemoteToolsEnabled(view.config.remoteTools?.enabled ?? !0), setSidebarEntry(view.config.sidebar?.entry ?? "standard"), props.sidebarEntry?.publish(view.config.sidebar?.entry ?? "standard"), setAcpBackends((view.config.acp?.backends ?? []).map((item) => ({ id: item.id, enabled: item.enabled !== !1 }))), setAcpAvailability(view.acpAvailability ?? {}), updateAssociations && applyAssociations(view), setWritable(view.writable), setLoaded(!0);
       }, load = async () => {
         let run = ++associationReadRun.current, [view, status] = await Promise.all([
           props.control("settings.get"),
@@ -3097,7 +3109,7 @@ If a code was sent, recover the original submission without changing it.`,
           if (!active || run !== providerRequestRun.current) return;
           let pairingSupported = items.some((item) => item.devicePairing === !0);
           setPairingServerUrl(pairingSupported ? savedServerUrl : void 0);
-          let available = items.filter((item) => item.qrStartUrl != null);
+          let available = items.filter((item) => item.qrStartUrl != null && item.id !== "zhihu" && item.id !== "dsh-go");
           setOAuthProviders(available), setLoginMethod((current) => {
             if (loginMethodManuallySelected.current && (current === "password" || current === "device_pairing" && pairingSupported || available.some((item) => `oauth:${item.id}` === current))) return current;
             let preferred = available.find((item) => item.id === props.preferredQrProvider) ?? available[0];
@@ -3172,7 +3184,7 @@ If a code was sent, recover the original submission without changing it.`,
           try {
             let result = await props.control("settings.configure", {
               role: "client",
-              serverUrl: serverUrl.trim() || "https://dsh.r2049.cn",
+              serverUrl: serverUrl.trim() || "https://desktop.svc.plus",
               email: loginEmail.trim(),
               password: loginPassword
             });
@@ -3705,14 +3717,14 @@ If a code was sent, recover the original submission without changing it.`,
               type: "button",
               disabled: busy || savingServer || !writable,
               onClick: () => {
-                serverDraftEdited.current = !0, setServerUrl("https://dsh.r2049.cn"), saveLoginServer("https://dsh.r2049.cn");
+                serverDraftEdited.current = !0, setServerUrl("https://desktop.svc.plus"), saveLoginServer("https://desktop.svc.plus");
               }
             }, t("restoreDefaultServiceAddress")),
             React.createElement("button", {
               type: "button",
               disabled: busy || savingServer || !writable,
               onClick: () => {
-                serverDraftEdited.current = !1, setServerUrl(savedServerUrl ?? "https://dsh.r2049.cn"), setEditingServer(!1);
+                serverDraftEdited.current = !1, setServerUrl(savedServerUrl ?? "https://desktop.svc.plus"), setEditingServer(!1);
               }
             }, t("cancelServiceAddressEdit"))
           ) : React.createElement(
@@ -4179,7 +4191,7 @@ If a code was sent, recover the original submission without changing it.`,
           if (typeof code == "string") return connectionErrorMessage(code, translate);
         }
         return messageOf(reason, translate);
-      }, [open, setOpen] = React.useState(!1), [status, setStatus] = React.useState(void 0), [devices, setDevices] = React.useState([]), [discoveryUnavailable, setDiscoveryUnavailable] = React.useState(!1), [selectedHost, setSelectedHost] = React.useState(void 0), [connectingHost, setConnectingHost] = React.useState(void 0), [workspaces, setWorkspaces] = React.useState([]), [codexWorkspaces, setCodexWorkspaces] = React.useState([]), [cursorWorkspaces, setCursorWorkspaces] = React.useState([]), [antigravityWorkspaces, setAntigravityWorkspaces] = React.useState([]), [piWorkspaces, setPiWorkspaces] = React.useState([]), [opencodeWorkspaces, setOpencodeWorkspaces] = React.useState([]), [claudeWorkspaces, setClaudeWorkspaces] = React.useState([]), [hermesWorkspaces, setHermesWorkspaces] = React.useState([]), [workspaceBackend, setWorkspaceBackend] = React.useState("harness"), [codexWorkspaceId, setCodexWorkspaceId] = React.useState(void 0), [cursorWorkspaceId, setCursorWorkspaceId] = React.useState(void 0), [antigravityWorkspaceId, setAntigravityWorkspaceId] = React.useState(void 0), [piWorkspaceId, setPiWorkspaceId] = React.useState(void 0), [opencodeWorkspaceId, setOpencodeWorkspaceId] = React.useState(void 0), [claudeWorkspaceId, setClaudeWorkspaceId] = React.useState(void 0), [hermesWorkspaceId, setHermesWorkspaceId] = React.useState(void 0), [directory, setDirectory] = React.useState(void 0), [path, setPath] = React.useState(""), [addingWorkspace, setAddingWorkspace] = React.useState(!1), [showAllWorkspaces, setShowAllWorkspaces] = React.useState(!1), [showAllCodexWorkspaces, setShowAllCodexWorkspaces] = React.useState(!1), [devicesOpen, setDevicesOpen] = React.useState(!1), [showAllCursorWorkspaces, setShowAllCursorWorkspaces] = React.useState(!1), [showAllAntigravityWorkspaces, setShowAllAntigravityWorkspaces] = React.useState(!1), [showAllPiWorkspaces, setShowAllPiWorkspaces] = React.useState(!1), [showAllOpencodeWorkspaces, setShowAllOpencodeWorkspaces] = React.useState(!1), [showAllClaudeWorkspaces, setShowAllClaudeWorkspaces] = React.useState(!1), [showAllHermesWorkspaces, setShowAllHermesWorkspaces] = React.useState(!1), workspaceListId = "dsh-remote-workspace-list", codexWorkspaceHeadingId = "dsh-remote-codex-workspace-heading", codexWorkspaceListId = "dsh-remote-codex-workspace-list", cursorWorkspaceHeadingId = "dsh-remote-cursor-workspace-heading", cursorWorkspaceListId = "dsh-remote-cursor-workspace-list", antigravityWorkspaceHeadingId = "dsh-remote-antigravity-workspace-heading", piWorkspaceHeadingId = "dsh-remote-pi-workspace-heading", opencodeWorkspaceHeadingId = "dsh-remote-opencode-workspace-heading", claudeWorkspaceHeadingId = "dsh-remote-claude-workspace-heading", hermesWorkspaceHeadingId = "dsh-remote-hermes-workspace-heading", antigravityWorkspaceListId = "dsh-remote-antigravity-workspace-list", piWorkspaceListId = "dsh-remote-pi-workspace-list", opencodeWorkspaceListId = "dsh-remote-opencode-workspace-list", claudeWorkspaceListId = "dsh-remote-claude-workspace-list", hermesWorkspaceListId = "dsh-remote-hermes-workspace-list", [busy, setBusy] = React.useState(!1), [needsAuthorization, setNeedsAuthorization] = React.useState(void 0), [email, setEmail] = React.useState(""), [password, setPassword] = React.useState(""), [loginServerUrl, setLoginServerUrl] = React.useState("https://dsh.r2049.cn"), [editingServer, setEditingServer] = React.useState(!1), [savingServer, setSavingServer] = React.useState(!1), serverDirty = loginServerUrl.trim() !== (status?.serverUrl ?? ""), [loginMethod, setLoginMethod] = React.useState("password"), loginMethodManuallySelected = React.useRef(!1), [oauthProviders, setOAuthProviders] = React.useState([]), [providersLoading, setProvidersLoading] = React.useState(!1), [providersFailed, setProvidersFailed] = React.useState(!1), [pairingServerUrl, setPairingServerUrl] = React.useState(void 0), pairingAvailable = pairingServerUrl !== void 0 && pairingServerUrl === status?.serverUrl, [providerReload, setProviderReload] = React.useState(0), providerRequestRun = React.useRef(0), [qrSession, setQrSession] = React.useState(void 0), [qrImage, setQrImage] = React.useState(void 0), [qrExpired, setQrExpired] = React.useState(!1), [hostEmail, setHostEmail] = React.useState(""), [hostPassword, setHostPassword] = React.useState(""), [hostRegistrationCode, setHostRegistrationCode] = React.useState(""), [progress, setProgress] = React.useState(void 0), progressRun = React.useRef(0), qrFlowRun = React.useRef(0), pageRef = React.useRef(null), [notice, setNotice] = React.useState(void 0), [error, setError] = React.useState(void 0), [sidebarEntry, setSidebarEntry] = React.useState(() => props.sidebarEntry.read());
+      }, [open, setOpen] = React.useState(!1), [status, setStatus] = React.useState(void 0), [devices, setDevices] = React.useState([]), [discoveryUnavailable, setDiscoveryUnavailable] = React.useState(!1), [selectedHost, setSelectedHost] = React.useState(void 0), [connectingHost, setConnectingHost] = React.useState(void 0), [workspaces, setWorkspaces] = React.useState([]), [codexWorkspaces, setCodexWorkspaces] = React.useState([]), [cursorWorkspaces, setCursorWorkspaces] = React.useState([]), [antigravityWorkspaces, setAntigravityWorkspaces] = React.useState([]), [piWorkspaces, setPiWorkspaces] = React.useState([]), [opencodeWorkspaces, setOpencodeWorkspaces] = React.useState([]), [claudeWorkspaces, setClaudeWorkspaces] = React.useState([]), [hermesWorkspaces, setHermesWorkspaces] = React.useState([]), [workspaceBackend, setWorkspaceBackend] = React.useState("harness"), [codexWorkspaceId, setCodexWorkspaceId] = React.useState(void 0), [cursorWorkspaceId, setCursorWorkspaceId] = React.useState(void 0), [antigravityWorkspaceId, setAntigravityWorkspaceId] = React.useState(void 0), [piWorkspaceId, setPiWorkspaceId] = React.useState(void 0), [opencodeWorkspaceId, setOpencodeWorkspaceId] = React.useState(void 0), [claudeWorkspaceId, setClaudeWorkspaceId] = React.useState(void 0), [hermesWorkspaceId, setHermesWorkspaceId] = React.useState(void 0), [directory, setDirectory] = React.useState(void 0), [path, setPath] = React.useState(""), [addingWorkspace, setAddingWorkspace] = React.useState(!1), [showAllWorkspaces, setShowAllWorkspaces] = React.useState(!1), [showAllCodexWorkspaces, setShowAllCodexWorkspaces] = React.useState(!1), [devicesOpen, setDevicesOpen] = React.useState(!1), [showAllCursorWorkspaces, setShowAllCursorWorkspaces] = React.useState(!1), [showAllAntigravityWorkspaces, setShowAllAntigravityWorkspaces] = React.useState(!1), [showAllPiWorkspaces, setShowAllPiWorkspaces] = React.useState(!1), [showAllOpencodeWorkspaces, setShowAllOpencodeWorkspaces] = React.useState(!1), [showAllClaudeWorkspaces, setShowAllClaudeWorkspaces] = React.useState(!1), [showAllHermesWorkspaces, setShowAllHermesWorkspaces] = React.useState(!1), workspaceListId = "dsh-remote-workspace-list", codexWorkspaceHeadingId = "dsh-remote-codex-workspace-heading", codexWorkspaceListId = "dsh-remote-codex-workspace-list", cursorWorkspaceHeadingId = "dsh-remote-cursor-workspace-heading", cursorWorkspaceListId = "dsh-remote-cursor-workspace-list", antigravityWorkspaceHeadingId = "dsh-remote-antigravity-workspace-heading", piWorkspaceHeadingId = "dsh-remote-pi-workspace-heading", opencodeWorkspaceHeadingId = "dsh-remote-opencode-workspace-heading", claudeWorkspaceHeadingId = "dsh-remote-claude-workspace-heading", hermesWorkspaceHeadingId = "dsh-remote-hermes-workspace-heading", antigravityWorkspaceListId = "dsh-remote-antigravity-workspace-list", piWorkspaceListId = "dsh-remote-pi-workspace-list", opencodeWorkspaceListId = "dsh-remote-opencode-workspace-list", claudeWorkspaceListId = "dsh-remote-claude-workspace-list", hermesWorkspaceListId = "dsh-remote-hermes-workspace-list", [busy, setBusy] = React.useState(!1), [needsAuthorization, setNeedsAuthorization] = React.useState(void 0), [email, setEmail] = React.useState(""), [password, setPassword] = React.useState(""), [loginServerUrl, setLoginServerUrl] = React.useState("https://desktop.svc.plus"), [editingServer, setEditingServer] = React.useState(!1), [savingServer, setSavingServer] = React.useState(!1), serverDirty = loginServerUrl.trim() !== (status?.serverUrl ?? ""), [loginMethod, setLoginMethod] = React.useState("password"), loginMethodManuallySelected = React.useRef(!1), [oauthProviders, setOAuthProviders] = React.useState([]), [providersLoading, setProvidersLoading] = React.useState(!1), [providersFailed, setProvidersFailed] = React.useState(!1), [pairingServerUrl, setPairingServerUrl] = React.useState(void 0), pairingAvailable = pairingServerUrl !== void 0 && pairingServerUrl === status?.serverUrl, [providerReload, setProviderReload] = React.useState(0), providerRequestRun = React.useRef(0), [qrSession, setQrSession] = React.useState(void 0), [qrImage, setQrImage] = React.useState(void 0), [qrExpired, setQrExpired] = React.useState(!1), [hostEmail, setHostEmail] = React.useState(""), [hostPassword, setHostPassword] = React.useState(""), [hostRegistrationCode, setHostRegistrationCode] = React.useState(""), [progress, setProgress] = React.useState(void 0), progressRun = React.useRef(0), qrFlowRun = React.useRef(0), pageRef = React.useRef(null), [notice, setNotice] = React.useState(void 0), [error, setError] = React.useState(void 0), [sidebarEntry, setSidebarEntry] = React.useState(() => props.sidebarEntry.read());
       React.useEffect(
         () => props.sidebarEntry.subscribe(() => setSidebarEntry(props.sidebarEntry.read())),
         [props.sidebarEntry]
@@ -4246,9 +4258,9 @@ If a code was sent, recover the original submission without changing it.`,
         let active = !0, run = ++providerRequestRun.current;
         return qrFlowRun.current += 1, setBusy(!1), setQrSession(void 0), setQrImage(void 0), setQrExpired(!1), setOAuthProviders([]), setProvidersLoading(!0), setProvidersFailed(!1), props.control("client.account.providers").then((items) => {
           if (!active || run !== providerRequestRun.current) return;
-          let pairingSupported = items.some((item) => item.devicePairing === !0);
+          let filtered = items.filter((item) => item.id !== "zhihu" && item.id !== "dsh-go"), pairingSupported = filtered.some((item) => item.devicePairing === !0);
           setPairingServerUrl(pairingSupported ? status?.serverUrl : void 0);
-          let available = items.filter((item) => item.qrStartUrl != null);
+          let available = filtered.filter((item) => item.qrStartUrl != null);
           setOAuthProviders(available), setLoginMethod((current) => {
             if (loginMethodManuallySelected.current && (current === "password" || current === "device_pairing" && pairingSupported || available.some((item) => `oauth:${item.id}` === current))) return current;
             let preferred = available.find((item) => item.id === props.preferredQrProvider) ?? available[0];
@@ -4734,13 +4746,60 @@ If a code was sent, recover the original submission without changing it.`,
                   React.createElement(
                     "a",
                     {
-                      href: "https://github.com/liguobao/ds-harness-remote",
+                      href: status?.serverUrl ?? loginServerUrl,
                       target: "_blank",
                       rel: "noopener noreferrer"
                     },
                     React.createElement("strong", { className: "dshRemoteLoginTitle" }, t("signInClient")),
                     React.createElement("span", null, t("signInClientDescription"))
                   )
+                ),
+                React.createElement(
+                  "div",
+                  {
+                    className: "dshRemoteWebRtcBanner",
+                    style: {
+                      marginBottom: "16px",
+                      padding: "12px 14px",
+                      borderRadius: "8px",
+                      background: "rgba(15, 23, 42, 0.04)",
+                      border: "1px solid rgba(15, 23, 42, 0.1)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "12px"
+                    }
+                  },
+                  React.createElement(
+                    "div",
+                    { style: { display: "flex", flexDirection: "column", gap: "3px" } },
+                    React.createElement(
+                      "div",
+                      { style: { display: "flex", alignItems: "center", gap: "6px" } },
+                      React.createElement("span", { style: { width: "8px", height: "8px", borderRadius: "50%", background: "#10b981", display: "inline-block" } }),
+                      React.createElement("strong", { style: { fontSize: "13px", color: "#0f172a" } }, t("webrtcDesktopTitle"))
+                    ),
+                    React.createElement(
+                      "span",
+                      { style: { fontSize: "12px", color: "#64748b" } },
+                      status?.serverUrl ?? loginServerUrl
+                    )
+                  ),
+                  React.createElement("a", {
+                    href: status?.serverUrl ?? loginServerUrl,
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    style: {
+                      padding: "6px 14px",
+                      background: "#0f172a",
+                      color: "#ffffff",
+                      borderRadius: "6px",
+                      fontSize: "12px",
+                      textDecoration: "none",
+                      fontWeight: 500,
+                      whiteSpace: "nowrap"
+                    }
+                  }, "\u{1F680} " + t("openWebrtcDesktop"))
                 ),
                 React.createElement(
                   "div",
@@ -4905,14 +4964,14 @@ If a code was sent, recover the original submission without changing it.`,
                       type: "button",
                       disabled: busy || savingServer,
                       onClick: () => {
-                        resetLoginFlow(), setLoginServerUrl("https://dsh.r2049.cn"), saveLoginServer("https://dsh.r2049.cn");
+                        resetLoginFlow(), setLoginServerUrl("https://desktop.svc.plus"), saveLoginServer("https://desktop.svc.plus");
                       }
                     }, t("restoreDefaultServiceAddress")),
                     React.createElement("button", {
                       type: "button",
                       disabled: busy || savingServer,
                       onClick: () => {
-                        setLoginServerUrl(status?.serverUrl ?? "https://dsh.r2049.cn"), setEditingServer(!1);
+                        setLoginServerUrl(status?.serverUrl ?? "https://desktop.svc.plus"), setEditingServer(!1);
                       }
                     }, t("cancelServiceAddressEdit"))
                   ) : React.createElement(

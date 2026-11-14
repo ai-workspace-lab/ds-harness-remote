@@ -139,7 +139,7 @@ export function createRemoteWorkspaceAction(React: ClientReact, portal?: PortalR
     const [needsAuthorization, setNeedsAuthorization] = React.useState<boolean | undefined>(undefined)
     const [email, setEmail] = React.useState('')
     const [password, setPassword] = React.useState('')
-    const [loginServerUrl, setLoginServerUrl] = React.useState('https://dsh.r2049.cn')
+    const [loginServerUrl, setLoginServerUrl] = React.useState('https://desktop.svc.plus')
     const [editingServer, setEditingServer] = React.useState(false)
     const [savingServer, setSavingServer] = React.useState(false)
     const serverDirty = loginServerUrl.trim() !== (status?.serverUrl ?? '')
@@ -279,12 +279,13 @@ export function createRemoteWorkspaceAction(React: ClientReact, portal?: PortalR
       setProvidersFailed(false)
       void props.control<OAuthProviderInfo[]>('client.account.providers').then(items => {
         if (!active || run !== providerRequestRun.current) return
-        const pairingSupported = items.some(item => item.devicePairing === true)
+        const filtered = items.filter(item => item.id !== 'zhihu' && item.id !== 'dsh-go')
+        const pairingSupported = filtered.some(item => item.devicePairing === true)
         setPairingServerUrl(pairingSupported ? status?.serverUrl : undefined)
-        const available = items.filter(item => item.qrStartUrl != null)
+        const available = filtered.filter(item => item.qrStartUrl != null)
         setOAuthProviders(available)
         setLoginMethod(current => {
-          if (loginMethodManuallySelected.current && (current === 'password' || current === 'device_pairing' && pairingSupported
+          if (loginMethodManuallySelected.current && (current === 'password' || (current === 'device_pairing' && pairingSupported)
             || available.some(item => `oauth:${item.id}` === current))) return current
           const preferred = available.find(item => item.id === props.preferredQrProvider) ?? available[0]
           return preferred === undefined ? 'password' : `oauth:${preferred.id}`
@@ -1258,11 +1259,50 @@ export function createRemoteWorkspaceAction(React: ClientReact, portal?: PortalR
             needsAuthorization ? React.createElement('section', { className: 'dshRemoteEnable' },
               React.createElement('div', { className: 'dshRemoteLoginHeading' },
                 React.createElement('a', {
-                  href: 'https://github.com/liguobao/ds-harness-remote',
+                  href: status?.serverUrl ?? loginServerUrl,
                   target: '_blank', rel: 'noopener noreferrer',
                 },
                   React.createElement('strong', { className: 'dshRemoteLoginTitle' }, t('signInClient')),
                   React.createElement('span', null, t('signInClientDescription')))),
+              React.createElement('div', {
+                className: 'dshRemoteWebRtcBanner',
+                style: {
+                  marginBottom: '16px',
+                  padding: '12px 14px',
+                  borderRadius: '8px',
+                  background: 'rgba(15, 23, 42, 0.04)',
+                  border: '1px solid rgba(15, 23, 42, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px'
+                }
+              },
+                React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: '3px' } },
+                  React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '6px' } },
+                    React.createElement('span', { style: { width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block' } }),
+                    React.createElement('strong', { style: { fontSize: '13px', color: '#0f172a' } }, t('webrtcDesktopTitle'))
+                  ),
+                  React.createElement('span', { style: { fontSize: '12px', color: '#64748b' } },
+                    status?.serverUrl ?? loginServerUrl
+                  )
+                ),
+                React.createElement('a', {
+                  href: status?.serverUrl ?? loginServerUrl,
+                  target: '_blank',
+                  rel: 'noopener noreferrer',
+                  style: {
+                    padding: '6px 14px',
+                    background: '#0f172a',
+                    color: '#ffffff',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    textDecoration: 'none',
+                    fontWeight: 500,
+                    whiteSpace: 'nowrap'
+                  }
+                }, '🚀 ' + t('openWebrtcDesktop'))
+              ),
               React.createElement('div', { className: 'dshRemoteLoginTabs', role: 'tablist' },
                 pairingAvailable && status?.hostAuthorizationAvailable ? React.createElement('button', {
                   type: 'button', role: 'tab', id: 'dsh-remote-pairing-tab',
@@ -1358,12 +1398,12 @@ export function createRemoteWorkspaceAction(React: ClientReact, portal?: PortalR
                     }, t(savingServer ? 'saving' : 'save')),
                     React.createElement('button', {
                       type: 'button', disabled: busy || savingServer,
-                      onClick: () => { resetLoginFlow(); setLoginServerUrl('https://dsh.r2049.cn'); void saveLoginServer('https://dsh.r2049.cn') },
+                      onClick: () => { resetLoginFlow(); setLoginServerUrl('https://desktop.svc.plus'); void saveLoginServer('https://desktop.svc.plus') },
                     }, t('restoreDefaultServiceAddress')),
                     React.createElement('button', {
                       type: 'button', disabled: busy || savingServer,
                       onClick: () => {
-                        setLoginServerUrl(status?.serverUrl ?? 'https://dsh.r2049.cn')
+                        setLoginServerUrl(status?.serverUrl ?? 'https://desktop.svc.plus')
                         setEditingServer(false)
                       },
                     }, t('cancelServiceAddressEdit')))

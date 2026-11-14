@@ -85210,7 +85210,7 @@ defineMethod("transform", [
 ], ({ inner }, isInner) => inner.toString(isInner));
 
 // packages/plugin/src/config.ts
-var DEFAULT_REMOTE_SERVER_URL = "https://dsh.r2049.cn";
+var DEFAULT_REMOTE_SERVER_URL = process.env.DSH_REMOTE_SERVER ?? process.env.XWORKMATE_REMOTE_SERVER ?? "https://dsh.r2049.cn";
 var entryConfigSchema = Schema.object({
   enabled: Schema.boolean(),
   role: Schema.union(["host", "client", "both"]),

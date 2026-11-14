@@ -37,4 +37,4 @@
       config:
         enabled: true
         role: host
-        serverUrl: https://dsh.r2049.cn
+        serverUrl: https://desktop.svc.plus

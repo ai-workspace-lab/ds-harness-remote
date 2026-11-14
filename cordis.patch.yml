@@ -12,12 +12,14 @@
       config:
         enabled: true
         role: host
-        serverUrl: https://gateway.svc.plus
+        serverUrl: https://desktop.svc.plus
+        gatewayUrl: https://gateway.svc.plus
         pairingProtocol: xworkmate-pairing-v1
         xworkmate:
           enabled: true
           pairingProtocol: xworkmate-pairing-v1
           transport: xconnect
+          desktopUrl: https://desktop.svc.plus
         codex:
           enabled: true
           binary: codex
