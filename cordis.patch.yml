@@ -13,6 +13,7 @@
         enabled: true
         role: host
         serverUrl: https://desktop.svc.plus
+        rdmUrl: https://rdm.svc.plus/app/hosts
         gatewayUrl: https://gateway.svc.plus
         pairingProtocol: xworkmate-pairing-v1
         xworkmate:
@@ -20,6 +21,7 @@
           pairingProtocol: xworkmate-pairing-v1
           transport: xconnect
           desktopUrl: https://desktop.svc.plus
+          rdmUrl: https://rdm.svc.plus/app/hosts
         codex:
           enabled: true
           binary: codex
