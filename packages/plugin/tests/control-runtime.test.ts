@@ -617,6 +617,34 @@ describe('PluginControlRuntime settings setup', () => {
     expect((view as any).value?.associations?.client).toBeUndefined()
     await expect(stat(join(hostDir, 'device.json'))).rejects.toMatchObject({ code: 'ENOENT' })
   })
+
+  it('waits for in-flight startup before forwarding client control calls', async () => {
+    const root = await temporaryDirectory()
+    const serverUrl = 'https://desktop.svc.plus'
+    const settings = settingsBinding({ serverUrl })
+    let ready = false
+    let releaseStartup!: () => void
+    const startup = new Promise<void>(resolve => {
+      releaseStartup = () => {
+        ready = true
+        resolve()
+      }
+    })
+    const fakeClient = {
+      handleControl: async (endpoint: string) => {
+        if (!ready) throw new ClientModeError('IDENTITY_INVALID', 'The client identity is not ready.')
+        return { ok: true as const, value: endpoint === 'devices' ? [{ deviceId: 'desktop-host' }] : { ready } }
+      },
+    } as unknown as ClientModeRuntime
+    const control = new PluginControlRuntime(resolveConfig(settings.get()), root, settings, fakeClient, undefined)
+    control.setStartupFlight(startup)
+    const handler = register(control)
+
+    const pendingDevices = handler('devices', {}, signal())
+    await Promise.resolve()
+    releaseStartup()
+    await expect(pendingDevices).resolves.toEqual({ ok: true, value: [{ deviceId: 'desktop-host' }] })
+  })
 })
 function register(runtime: PluginControlRuntime) {
   let handler: ((endpoint: string, payload: unknown, signal: AbortSignal) => Promise<ControlResult<unknown>>) | undefined

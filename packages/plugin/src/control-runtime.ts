@@ -70,8 +70,16 @@ export interface PluginSettingsBinding {
 export class PluginControlRuntime {
   private logoutFlight?: Promise<PluginSettingsView>
   private serverSwitchFlight?: Promise<PluginSettingsView>
+  private startupFlight?: Promise<void>
   private startupFailure?: unknown
   private storageAvailable = true
+
+  setStartupFlight(flight: Promise<void>): void {
+    const tracked = flight.catch(() => undefined).finally(() => {
+      if (this.startupFlight === tracked) this.startupFlight = undefined
+    })
+    this.startupFlight = tracked
+  }
 
   setStartupFailure(error: unknown, options?: { storageAvailable?: boolean }): void {
     this.startupFailure = error
@@ -196,6 +204,12 @@ export class PluginControlRuntime {
           ? await this.client.handleControl(endpoint, payload, signal)
           : ok(this.hostOnlyStatus())
         return withUpdate(base, this.updates?.snapshot())
+      }
+      if (this.startupFlight !== undefined) {
+        await awaitStartupFlight(this.startupFlight, signal)
+      }
+      if (this.startupFailure instanceof Error) {
+        throw this.startupFailure
       }
       if (this.client !== undefined) return this.client.handleControl(endpoint, payload, signal)
 
@@ -784,6 +798,22 @@ function record(value: unknown): Record<string, unknown> {
 }
 
 function ok(value: unknown): ControlResult<unknown> { return { ok: true, value } }
+
+async function awaitStartupFlight(flight: Promise<void>, signal: AbortSignal): Promise<void> {
+  if (signal.aborted) throw new ClientModeError('CANCELLED', 'The Remote startup wait was cancelled.')
+  let onAbort: (() => void) | undefined
+  try {
+    await Promise.race([
+      flight,
+      new Promise<never>((_, reject) => {
+        onAbort = () => reject(new ClientModeError('CANCELLED', 'The Remote startup wait was cancelled.'))
+        signal.addEventListener('abort', onAbort, { once: true })
+      }),
+    ])
+  } finally {
+    if (onAbort !== undefined) signal.removeEventListener('abort', onAbort)
+  }
+}
 
 /** Attach the update-check snapshot to a successful status-shaped result. */
 function withUpdate(result: ControlResult<unknown>, update: PluginUpdateSnapshot | undefined): ControlResult<unknown> {
