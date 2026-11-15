@@ -442,6 +442,7 @@ async function activate(
             })
           }
         })()
+        controlRuntime?.setStartupFlight(startup)
         await startup
         // Only the browser/Desktop connection surfaces the update notice, so a
         // Host composition without it skips the registry calls.

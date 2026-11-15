@@ -98045,8 +98045,15 @@ var PluginControlRuntime = class {
   }
   logoutFlight;
   serverSwitchFlight;
+  startupFlight;
   startupFailure;
   storageAvailable = true;
+  setStartupFlight(flight) {
+    const tracked = flight.catch(() => void 0).finally(() => {
+      if (this.startupFlight === tracked) this.startupFlight = void 0;
+    });
+    this.startupFlight = tracked;
+  }
   setStartupFailure(error62, options) {
     this.startupFailure = error62;
     if (options?.storageAvailable !== void 0) {
@@ -98142,6 +98149,12 @@ var PluginControlRuntime = class {
         }
         const base = this.client !== void 0 ? await this.client.handleControl(endpoint, payload, signal) : ok3(this.hostOnlyStatus());
         return withUpdate(base, this.updates?.snapshot());
+      }
+      if (this.startupFlight !== void 0) {
+        await awaitStartupFlight(this.startupFlight, signal);
+      }
+      if (this.startupFailure instanceof Error) {
+        throw this.startupFailure;
       }
       if (this.client !== void 0) return this.client.handleControl(endpoint, payload, signal);
       if (endpoint === "devices") return ok3([]);
@@ -98680,6 +98693,21 @@ function record9(value) {
 }
 function ok3(value) {
   return { ok: true, value };
+}
+async function awaitStartupFlight(flight, signal) {
+  if (signal.aborted) throw new ClientModeError("CANCELLED", "The Remote startup wait was cancelled.");
+  let onAbort;
+  try {
+    await Promise.race([
+      flight,
+      new Promise((_, reject) => {
+        onAbort = () => reject(new ClientModeError("CANCELLED", "The Remote startup wait was cancelled."));
+        signal.addEventListener("abort", onAbort, { once: true });
+      })
+    ]);
+  } finally {
+    if (onAbort !== void 0) signal.removeEventListener("abort", onAbort);
+  }
 }
 function withUpdate(result, update) {
   if (update === void 0 || !result.ok || !isRecord20(result.value)) return result;
@@ -104464,6 +104492,7 @@ async function activate(ctx, readConfig, entryId, requireRemoteEvents = false) {
             });
           }
         })();
+        controlRuntime?.setStartupFlight(startup);
         await startup;
         if (connection !== void 0) updateChecker.start();
       } catch (error62) {
